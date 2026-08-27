@@ -69,3 +69,13 @@
 - Проверено в dev-сервере: все три маршрута отдают правильный `<h1>`-плейсхолдер, активная nav-ссылка подсвечивается
 - Проверена сборка (npm run build) — успешна
 - Проверен линтинг (npm run lint) — 0 ошибок/предупреждений (exit code 0)
+
+### Task 3 (Commit 14db7de)
+- Установлен `vitest` версии 4.1.11 (точная версия) с флагом `--save-exact --save-dev`
+- Создан `app/vitest.config.ts` с конфигурацией: окружение Node, glob pattern `tests/**/*.test.ts`
+- Добавлен скрипт `"test": "vitest run"` в `app/package.json`
+- Создана папка `app/tests/` для будущих тестов
+- Написан smoke-тест `app/tests/smoke.test.ts` для проверки работоспособности runner'а
+- Тест запущен: `npm run test` → 1 passed (1 файл, 1 тест)
+- Smoke-тест удалён (выполнил свою роль — доказал, что runner работает)
+- Коммит с установкой Vitest: `app/package.json`, `app/package-lock.json`, `app/vitest.config.ts`
