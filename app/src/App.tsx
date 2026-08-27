@@ -1,10 +1,7 @@
 // app/src/App.tsx
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
-
-function MapPlaceholder() {
-  return <h1>Карта (feature/map-routes)</h1>;
-}
+import { MapScreen } from './features/map/MapScreen';
 
 function RequestsPlaceholder() {
   return <h1>Заявки (feature/requests-moodboard)</h1>;
@@ -18,7 +15,7 @@ export function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<MapPlaceholder />} />
+        <Route path="/" element={<MapScreen />} />
         <Route path="/requests" element={<RequestsPlaceholder />} />
         <Route path="/cabinet" element={<CabinetPlaceholder />} />
       </Routes>
