@@ -39,12 +39,7 @@ export function PlacesMap({
         <Polyline positions={routePolyline} pathOptions={{ color: '#333' }} />
       )}
       {places.map((place) => (
-        <Marker
-          key={place.id}
-          position={[place.lat, place.lng]}
-          eventHandlers={{ click: () => onToggleSelect(place.id) }}
-          keyboard
-        >
+        <Marker key={place.id} position={[place.lat, place.lng]} keyboard>
           <Popup>
             <strong>{place.name}</strong>
             {place.source === 'user' && <div>от пользователя</div>}
