@@ -191,3 +191,23 @@
   - Специальный тип `ExistingPlaceLike<T extends LatLng>` позволяет переиспользовать с любыми типами мест (не только с проверенной структурой `{id, name, lat, lng}`)
 - `npx tsc --noEmit` и `npm run lint` — без ошибок
 - Коммит: `app/src/lib/places.ts`, `app/tests/places.test.ts` (Commit a606905)
+
+### Task 12: Rate-limit error mapping module (TDD) (Commit 1a51715)
+- Написан `app/tests/limits.test.ts` с 4 тестами на функцию `getLimitErrorMessage(errorMessage: string | null, isAnonymous: boolean): string | null`:
+  - Test 1: Возврат guest upsell-сообщения при попадании анонимного пользователя в лимит: 'Дневной лимит исчерпан. Войдите, чтобы добавлять до 5 в день.'
+  - Test 2: Возврат plain-сообщения при попадании зарегистрированного пользователя в лимит: 'Дневной лимит на сегодня исчерпан — попробуйте завтра.'
+  - Test 3: Возврат `null` при несвязанной ошибке ('duplicate key value violates unique constraint')
+  - Test 4: Возврат `null` при `null` входе
+- TDD RED: `npm run test -- limits.test.ts` → `Cannot find module '../src/lib/limits'` — модуль ещё не создан, тест корректно падает
+- Написан `app/src/lib/limits.ts` строго по спецификации брифа:
+  - Экспортирует функцию `getLimitErrorMessage(errorMessage: string | null, isAnonymous: boolean): string | null`
+  - Проверка: если `errorMessage` falsy или не содержит `'rate_limit_exceeded'` → возврат `null`
+  - Иначе: для анонимных пользователей возврат guest upsell-копии; для зарегистрированных — plain-копии
+- TDD GREEN: `npm run test -- limits.test.ts` → 4 теста пройдены
+- Самопроверка:
+  - Русская копия для анонимных — полное совпадение с бриф-спецификацией: 'Дневной лимит исчерпан. Войдите, чтобы добавлять до 5 в день.'
+  - Русская копия для зарегистрированных — полное совпадение: 'Дневной лимит на сегодня исчерпан — попробуйте завтра.'
+  - Возврат `null` для несвязанных ошибок: верно
+  - Возврат `null` для `null` входа: верно (проверка `!errorMessage` перехватывает null, undefined, empty string)
+- `npx tsc --noEmit` и `npm run lint` (oxlint src) — без ошибок
+- Коммит: `app/src/lib/limits.ts`, `app/tests/limits.test.ts` (Commit 1a51715)
