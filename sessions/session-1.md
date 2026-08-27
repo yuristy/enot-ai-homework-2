@@ -412,7 +412,7 @@ PostgREST выполняет INSERT ролью `authenticated` с простав
 политики и триггера и повторная `curl`-проверка сценария обхода — за
 контроллером.
 
-Коммит: `7d99ca6` — `README.md`, `app/.gitignore`, `app/package.json`,
+Коммит: `90b9b33` — `README.md`, `app/.gitignore`, `app/package.json`,
 `app/src/lib/supabaseClient.ts`, `app/src/lib/mappers.ts`,
 `app/supabase/policies.sql`, `app/tsconfig.json`, `app/tsconfig.test.json`,
 `app/vitest.config.ts`, `app/tests/mappers.test.ts`,
