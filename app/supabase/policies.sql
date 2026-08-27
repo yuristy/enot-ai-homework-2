@@ -1,4 +1,14 @@
 -- app/supabase/policies.sql
+--
+-- Re-applying to a project that already has these policies: `create policy` fails
+-- with "already exists", so run
+--   drop policy if exists "places_insert_authenticated" on public.places;
+-- (and the same for any other policy being replaced) before pasting this file,
+-- or run just the changed statements. `create or replace function` and the
+-- trigger definitions can be re-run only after the matching
+--   drop trigger if exists places_rate_limit on public.places;
+--   drop trigger if exists requests_rate_limit on public.requests;
+-- the function body itself replaces in place without a drop.
 
 alter table public.profiles enable row level security;
 alter table public.places enable row level security;
@@ -21,12 +31,20 @@ create policy "profiles_insert_own_registered" on public.profiles
 create policy "profiles_update_own" on public.profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);
 
--- places: readable by everyone, insertable by any authenticated session (rate-limited below)
+-- places: readable by everyone, insertable by any authenticated session (rate-limited below).
+-- `source = 'user'` is part of the check on purpose: a client session (anonymous or
+-- registered) may only ever create user-sourced rows. Curated rows are an operator
+-- action applied through the SQL Editor (no JWT), never through PostgREST. Without
+-- this clause a logged-in client could POST {"source":"curated","created_by":"<own-uid>"}
+-- from DevTools and hit the trigger's curated exemption, bypassing the daily quota
+-- entirely — see the matching `auth.uid() is null` guard in enforce_daily_limit() below.
 create policy "places_select_all" on public.places
   for select using (true);
 
 create policy "places_insert_authenticated" on public.places
-  for insert with check (auth.uid() is not null and auth.uid() = created_by);
+  for insert with check (
+    auth.uid() is not null and auth.uid() = created_by and source = 'user'
+  );
 
 -- requests: readable by everyone, insertable by any authenticated session (rate-limited below)
 create policy "requests_select_all" on public.requests
@@ -68,7 +86,14 @@ begin
   -- created_by — exempt them from the daily quota entirely rather than
   -- requiring a fake author. Without this, applying seed.sql fails outright
   -- (see Task 8), because every curated row has created_by = null.
-  if tg_table_name = 'places' and new.source = 'curated' then
+  --
+  -- The `auth.uid() is null` guard scopes the exemption to inserts that carry no
+  -- JWT at all — i.e. the SQL Editor / postgres role, which is exactly how seeding
+  -- happens. Anything arriving through PostgREST has a session (anonymous or
+  -- registered) and therefore a non-null auth.uid(), so a client cannot buy its way
+  -- out of the quota by claiming source='curated'. (RLS already rejects such an
+  -- insert first — see places_insert_authenticated — this is the second lock.)
+  if tg_table_name = 'places' and new.source = 'curated' and auth.uid() is null then
     return new;
   end if;
 

@@ -78,4 +78,10 @@ Foundation-план (`docs/superpowers/plans/2026-08-27-01-foundation.md`,
 - `docs/superpowers/plans/2026-08-27-03-feature-cabinet.md`
 - `docs/superpowers/plans/2026-08-27-04-feature-requests-moodboard.md`
 
+**Bootstrap каждого worktree (иначе приложение падает на старте с
+`supabaseUrl is required.`):**
+`cp <repo-root>/app/.env.local <worktree>/app/.env.local && cd <worktree>/app && npm install`
+перед первым запуском — `.env.local` игнорируется git и не копируется
+автоматически, `node_modules/` в worktree тоже нет.
+
 После них — интеграция по `docs/superpowers/plans/2026-08-27-05-integration.md`.
