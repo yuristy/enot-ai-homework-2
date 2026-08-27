@@ -79,3 +79,15 @@
 - Тест запущен: `npm run test` → 1 passed (1 файл, 1 тест)
 - Smoke-тест удалён (выполнил свою роль — доказал, что runner работает)
 - Коммит с установкой Vitest: `app/package.json`, `app/package-lock.json`, `app/vitest.config.ts`
+
+### Task 4: Set up Playwright
+- Получена текущая версия @playwright/test: 1.62.1 (npm view)
+- Установлен `@playwright/test` версии 1.62.1 (точная версия) с флагом `--save-exact --save-dev`
+- Запущена команда `npx playwright install --with-deps chromium` — успешно загружены браузер Chromium 151.0.7922.34 и зависимости
+- Создан `app/playwright.config.ts` с конфигурацией: testDir `./e2e`, webServer на порту 5183, baseURL `http://localhost:5183`, проект для Desktop Chrome
+- Добавлен скрипт `"test:e2e": "playwright test"` в `app/package.json`
+- Создана папка `app/e2e/` для e2e-тестов
+- Написан smoke e2e-тест `app/e2e/smoke.spec.ts`: проверяет загрузку главной страницы и видимость заголовка "Москва в кадре"
+- Тест запущен: `npm run test:e2e` → 1 passed (234ms)
+- Smoke-тест сохранён — по требованию brief это базовая проверка boot'а приложения, которая остаётся на месте для последующих feature-веток
+- Коммит с установкой Playwright: `app/package.json`, `app/package-lock.json`, `app/playwright.config.ts`, `app/e2e/smoke.spec.ts` (Commit a7cbd4a)
