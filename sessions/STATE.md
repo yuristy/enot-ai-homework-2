@@ -11,16 +11,19 @@
 - Роутинг с тремя маршрутами-заглушками (`/`, `/requests`, `/cabinet`) через
   `react-router-dom`, `Header`/`Layout`-компоненты (Task 2); `/moodboard`
   добавится веткой `feature/requests-moodboard`.
-- Supabase: клиент и анонимный вход (`app/src/lib/supabaseClient.ts`, Task 5),
-  схема шести таблиц (`app/supabase/schema.sql`, Task 6), RLS-политики и
-  триггер дневного лимита (1 анонимно / 5 зарегистрированным)
-  (`app/supabase/policies.sql`, Task 7), 12 курируемых мест
-  (`app/supabase/seed.sql`, Task 8). Проект живой, схема и данные применены
-  контроллером через SQL Editor и проверены вручную через `curl` (см.
-  session-1.md, заметки контроллера): анонимный лимит 1/день срабатывает
-  корректно (повторная вставка в тот же день возвращает
-  `rate_limit_exceeded`), курируемые места (`source='curated'`) освобождены
-  от лимита.
+- Supabase: клиент и анонимный вход (`app/src/lib/supabaseClient.ts`, Task 5;
+  анонимный вход был выключен в настройках проекта, контроллер включил его
+  в дашборде и подтвердил `curl`-ом — см. `sessions/session-1.md`, раздел
+  «Заметки контроллера»), схема шести таблиц (`app/supabase/schema.sql`,
+  Task 6), RLS-политики и триггер дневного лимита (1 анонимно / 5
+  зарегистрированным) (`app/supabase/policies.sql`, Task 7), 12 курируемых
+  мест (`app/supabase/seed.sql`, Task 8). Проект живой, схема и данные
+  применены контроллером через SQL Editor и проверены вручную через `curl`
+  (см. `sessions/session-1.md`, раздел «Заметки контроллера»): анонимный
+  лимит 1/день срабатывает корректно (повторная вставка в тот же день
+  возвращает `rate_limit_exceeded`), курируемые места (`source='curated'`)
+  освобождены от лимита, ровно 12 строк подтверждены через
+  `GET /rest/v1/places?source=eq.curated`.
 - Общие модули с тестами: `lib/types.ts` (общие TS-типы всех сущностей,
   Task 9), `lib/route.ts` (haversine, nearest-neighbor маршрут, оценка
   времени/сложности, кодек URL, Task 10), `lib/places.ts` (дедуп по радиусу
