@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { PlacesMap } from './PlacesMap';
 import { RouteTray } from './RouteTray';
 import { RouteSummary } from './RouteSummary';
+import { TagFilter } from './TagFilter';
 import { useRouteState } from './useRouteState';
 import { usePlaces } from './usePlaces';
 
@@ -10,6 +11,21 @@ export function MapScreen() {
   const { state, toggleSelected, setStart, clearStart, selectedPlaces, built, estimate, shareUrl } =
     useRouteState(places);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
+
+  const allTags = Array.from(new Set(places.flatMap((p) => p.tags))).sort();
+
+  function toggleTag(tag: string) {
+    setActiveTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }
+
+  const visiblePlaces =
+    activeTags.size === 0 ? places : places.filter((p) => p.tags.some((t) => activeTags.has(t)));
 
   function handleUseGeolocation() {
     navigator.geolocation.getCurrentPosition(
@@ -39,8 +55,9 @@ export function MapScreen() {
 
   return (
     <div>
+      <TagFilter allTags={allTags} activeTags={activeTags} onToggle={toggleTag} />
       <PlacesMap
-        places={places}
+        places={visiblePlaces}
         selectedIds={new Set(state.selectedIds)}
         onToggleSelect={toggleSelected}
         onMapClickSetStart={setStart}
