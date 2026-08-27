@@ -31,16 +31,18 @@ create policy "profiles_insert_own_registered" on public.profiles
 create policy "profiles_update_own" on public.profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);
 
--- places: readable by everyone, insertable by any authenticated session (rate-limited below).
+-- places: readable by everyone, insertable by any authenticated session (rate-limited below)
+create policy "places_select_all" on public.places
+  for select using (true);
+
 -- `source = 'user'` is part of the check on purpose: a client session (anonymous or
 -- registered) may only ever create user-sourced rows. Curated rows are an operator
 -- action applied through the SQL Editor (no JWT), never through PostgREST. Without
 -- this clause a logged-in client could POST {"source":"curated","created_by":"<own-uid>"}
 -- from DevTools and hit the trigger's curated exemption, bypassing the daily quota
 -- entirely — see the matching `auth.uid() is null` guard in enforce_daily_limit() below.
-create policy "places_select_all" on public.places
-  for select using (true);
-
+-- (There is deliberately no UPDATE policy on places, so a row cannot be flipped to
+-- 'curated' after the fact either — RLS denies by default.)
 create policy "places_insert_authenticated" on public.places
   for insert with check (
     auth.uid() is not null and auth.uid() = created_by and source = 'user'
