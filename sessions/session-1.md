@@ -143,3 +143,18 @@
   - Строки: 1) Смотровая площадка Воробьёвы горы; 2) Парк Зарядье; 3) Патриаршие пруды; 4) ГУМ; 5) Артплей; 6) Крутицкое подворье; 7) Царицыно; 8) Библиотека Ленина; 9) Останкинская телебашня; 10) Электрозавод; 11) Коломенское; 12) Никольская улица
 - Шаги брифа "применить в Supabase" и "проверить через curl" пропущены — вне зоны ответственности (нет доступа к БД), контроллер выполнит отдельно
 - Коммит: `app/supabase/seed.sql` (Commit 6ec40ed)
+
+### Task 9: Shared TypeScript types (Commit 251ae6a)
+- Написан `app/src/lib/types.ts` с экспортом шести интерфейсов и четырёх типов-алиасов согласно спецификации брифа:
+  - Type `PlaceSource` = 'curated' | 'user'
+  - Interface `Place`: id (number), name, description (string | null), lat/lng (number), tags (string[]), photoUrl (string | null), source (PlaceSource), createdBy (string | null), createdAt (string)
+  - Type `ProfileRole` = 'seeker' | 'photographer'
+  - Interface `Profile`: id (string), role (ProfileRole | null), displayName (string | null), createdAt (string)
+  - Interface `Favorite`: userId (string), placeId (number), createdAt (string)
+  - Type `RequestType` = 'seeking_photographer' | 'offering_photography'
+  - Interface `PhotoRequest`: id (number), requestType (RequestType), placeId (number | null), wantedDate (string | null), comment (string | null), authorId (string), createdAt (string)
+  - Interface `SavedRoute`: id (number), userId (string), title (string | null), startLat/startLng (number), placeIds (number[]), createdAt (string)
+  - Interface `Moodboard`: id (number), userId (string), title (string | null), placeIds (number[]), createdAt (string)
+- Проведена проверка типов: `npx tsc --noEmit` в директории `app/` — без ошибок
+- Файл точно соответствует спецификации брифа: все поля, типы и иерархия совпадают
+- Коммит: `app/src/lib/types.ts` (Commit 251ae6a)
