@@ -1,6 +1,7 @@
 // app/src/App.tsx
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { AuthProvider } from './features/cabinet/AuthProvider';
 
 function MapPlaceholder() {
   return <h1>Карта (feature/map-routes)</h1>;
@@ -16,12 +17,14 @@ function CabinetPlaceholder() {
 
 export function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<MapPlaceholder />} />
-        <Route path="/requests" element={<RequestsPlaceholder />} />
-        <Route path="/cabinet" element={<CabinetPlaceholder />} />
-      </Routes>
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<MapPlaceholder />} />
+          <Route path="/requests" element={<RequestsPlaceholder />} />
+          <Route path="/cabinet" element={<CabinetPlaceholder />} />
+        </Routes>
+      </Layout>
+    </AuthProvider>
   );
 }
