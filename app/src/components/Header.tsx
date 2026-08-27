@@ -15,6 +15,9 @@ export function Header() {
         <NavLink to="/requests" className={linkClass}>
           Заявки
         </NavLink>
+        <NavLink to="/moodboard" className={linkClass}>
+          Мудборд
+        </NavLink>
         <NavLink to="/cabinet" className={linkClass}>
           Кабинет
         </NavLink>
