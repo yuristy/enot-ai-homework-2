@@ -83,6 +83,16 @@ declare
   today_count integer;
   author uuid;
 begin
+  -- `new` is a generic RECORD here (this one function is attached to two
+  -- tables with different columns), so `new.source` must never appear in the
+  -- same boolean expression that also runs for the `requests` trigger — even
+  -- guarded by `tg_table_name = 'places' and ...` short-circuiting, Postgres
+  -- still tries to resolve `new.source` against whatever row actually fired
+  -- the trigger and throws `42703 record "new" has no field "source"` for
+  -- every `requests` insert. Nesting it inside its own `if tg_table_name =
+  -- 'places' then` block (a separate PL/pgSQL statement, not a combined
+  -- expression) keeps that branch from ever being reached for `requests` rows.
+  --
   -- Curated catalog entries (seeded via app/supabase/seed.sql, source='curated')
   -- are an operator/curation action, not an end-user submission, and have no
   -- created_by — exempt them from the daily quota entirely rather than
@@ -95,11 +105,10 @@ begin
   -- registered) and therefore a non-null auth.uid(), so a client cannot buy its way
   -- out of the quota by claiming source='curated'. (RLS already rejects such an
   -- insert first — see places_insert_authenticated — this is the second lock.)
-  if tg_table_name = 'places' and new.source = 'curated' and auth.uid() is null then
-    return new;
-  end if;
-
   if tg_table_name = 'places' then
+    if new.source = 'curated' and auth.uid() is null then
+      return new;
+    end if;
     author := new.created_by;
   else
     author := new.author_id;
