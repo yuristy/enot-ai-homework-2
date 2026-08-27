@@ -170,3 +170,24 @@
 - Самопроверка: nearest-neighbor для 3 точек (start (0,0), points id3/lng3, id1/lng1, id2/lng2) вручную прослежен → `[1,2,3]` — верно; границы сложности (easy/medium/hard) проверены вручную на всех трёх граничных тестовых случаях — совпадают с формулой брифа; минуты для 4.5км/3 остановок: 60 мин ходьбы + 45 мин остановок = 105, округление до 5 не меняет — совпадает; round-trip `buildRouteUrl`/`parseRouteFromUrl` — совпадает
 - `npx tsc --noEmit` и `npm run lint` (oxlint src) — без ошибок
 - Коммит: `app/src/lib/route.ts`, `app/tests/route.test.ts` (Commit 13f89fc)
+
+### Task 11: Place dedup module (TDD) (Commit a606905)
+- Написан `app/tests/places.test.ts` с 3 тестами на функцию `findNearbyDuplicates`:
+  - Test 1: Поиск места в пределах дефолтного радиуса 100m (новая точка ~30m от места 1 → должна найти место 1)
+  - Test 2: Возврат пустого массива при отсутствии мест в радиусе (новая точка ~23км от обоих → не найти ничего)
+  - Test 3: Соблюдение кастомного радиуса (новая точка ~500m от места 2, кастомный радиус 600m → должна найти место 2)
+- TDD RED: `npm run test` → `Cannot find module '../src/lib/places'` — модуль ещё не создан, тест корректно падает
+- Написан `app/src/lib/places.ts` строго по спецификации брифа:
+  - Экспортирует интерфейс `ExistingPlaceLike extends LatLng` с полями `id` (number) и `name` (string)
+  - Экспортирует функцию `findNearbyDuplicates<T extends ExistingPlaceLike>(newPoint: LatLng, existing: T[], radiusMeters = 100): T[]`
+  - Импортирует `haversineDistanceKm` из `./route` (не переопределяет локально)
+  - Преобразует `radiusMeters` в км, фильтрует места с расстоянием ≤ radiusKm
+- TDD GREEN: `npm run test` → 14 тестов пройдено (3 новых теста places + 11 существующих)
+- Самопроверка:
+  - Импорт из './route': верно (не переопределён локально)
+  - Дефолтный радиус 100m: верно (параметр radiusMeters = 100)
+  - Преобразование метры → км: верно (radiusMeters / 1000)
+  - Логика фильтрации: верно (существующие места с расстоянием ≤ radiusKm)
+  - Специальный тип `ExistingPlaceLike<T extends LatLng>` позволяет переиспользовать с любыми типами мест (не только с проверенной структурой `{id, name, lat, lng}`)
+- `npx tsc --noEmit` и `npm run lint` — без ошибок
+- Коммит: `app/src/lib/places.ts`, `app/tests/places.test.ts` (Commit a606905)
