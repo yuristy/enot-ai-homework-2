@@ -1,20 +1,14 @@
 import { useState } from 'react';
 import { PlacesMap } from './PlacesMap';
 import { RouteTray } from './RouteTray';
+import { RouteSummary } from './RouteSummary';
 import { useRouteState } from './useRouteState';
 import { usePlaces } from './usePlaces';
 
 export function MapScreen() {
   const { places, loading, error } = usePlaces();
-  const {
-    state,
-    toggleSelected,
-    setStart,
-    clearStart,
-    built: _built,
-    estimate: _estimate,
-    shareUrl,
-  } = useRouteState(places);
+  const { state, toggleSelected, setStart, clearStart, selectedPlaces, built, estimate, shareUrl } =
+    useRouteState(places);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   function handleUseGeolocation() {
@@ -32,12 +26,25 @@ export function MapScreen() {
   if (loading) return <p>Загрузка мест…</p>;
   if (error) return <p>Не удалось загрузить места: {error}</p>;
 
+  const polyline: [number, number][] | undefined =
+    built && state.start
+      ? [
+          [state.start.lat, state.start.lng] as [number, number],
+          ...built.orderedIds.map((id) => {
+            const place = selectedPlaces.find((p) => p.id === id)!;
+            return [place.lat, place.lng] as [number, number];
+          }),
+        ]
+      : undefined;
+
   return (
     <div>
       <PlacesMap
         places={places}
         selectedIds={new Set(state.selectedIds)}
         onToggleSelect={toggleSelected}
+        onMapClickSetStart={setStart}
+        routePolyline={polyline}
       />
       <RouteTray
         selectedCount={state.selectedIds.length}
@@ -47,9 +54,14 @@ export function MapScreen() {
         onCopyLink={handleCopyLink}
       />
       {copyFeedback && <p role="status">{copyFeedback}</p>}
-      {/* built/estimate summary panel (RouteSummary) is wired in Task 4,
-          once the component and the route polyline exist — rendering it
-          here would import a file that doesn't exist yet in this task */}
+      {built && estimate && (
+        <RouteSummary
+          orderedPlaces={built.orderedIds.map((id) => selectedPlaces.find((p) => p.id === id)!)}
+          totalDistanceKm={built.totalDistanceKm}
+          minutes={estimate.minutes}
+          difficulty={estimate.difficulty}
+        />
+      )}
     </div>
   );
 }
