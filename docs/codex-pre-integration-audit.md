@@ -119,3 +119,35 @@
 3. Довести отображение moodboard errors, добавить предусмотренный e2e и
    exit checkpoint.
 4. Только после трёх чистых веток переходить к integration-плану.
+
+## Handoff: владелец sessions
+
+Канонический каталог `sessions/` на этапе интеграции ведёт Claude как
+главный контроллер. Codex не изменяет `sessions/STATE.md`,
+`sessions/TOOLS.md` и `sessions/session-N.md` в параллельной ветке,
+чтобы не создавать конфликтующие версии истории и текущего состояния.
+
+После переноса Codex-коммитов в итоговую ветку Claude должен отразить их в
+следующем доступном `sessions/session-N.md`, дополняемом
+`sessions/TOOLS.md` и актуальном `sessions/STATE.md`:
+
+| SHA | Материал |
+|---|---|
+| `032b3c1` | Демонстрация sandbox isolation |
+| `030dc8f` | Prompt-injection: `gpt-5.6-luna/low` против `gpt-5.6-sol/high` |
+| `cc6815d` | Предварительный read-only аудит feature-веток |
+
+Источники доказательств:
+
+- `docs/isolation-test-codex.md`;
+- `docs/prompt-injection-test-codex.md`;
+- `docs/codex-pre-integration-audit.md`.
+
+В `sessions/` достаточно сослаться на эти документы и указать ветки, SHA,
+модели, reasoning, CLI-режим и честные результаты; полный дословный вывод
+дублировать не требуется.
+
+Перед финальной интеграцией Claude также проверяет, что каждый из трёх
+feature-контроллеров обновил session-журнал на своём exit checkpoint.
+`feature/cabinet` и `feature/requests-moodboard` на момент этого снимка
+до exit checkpoint ещё не дошли.
