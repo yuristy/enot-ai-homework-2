@@ -3,6 +3,7 @@ import { PlacesMap } from './PlacesMap';
 import { RouteTray } from './RouteTray';
 import { RouteSummary } from './RouteSummary';
 import { TagFilter } from './TagFilter';
+import { AddPlaceForm } from './AddPlaceForm';
 import { useRouteState } from './useRouteState';
 import { usePlaces } from './usePlaces';
 
@@ -79,6 +80,7 @@ export function MapScreen() {
           difficulty={estimate.difficulty}
         />
       )}
+      <AddPlaceForm existingPlaces={places} onSubmitted={() => window.location.reload()} />
     </div>
   );
 }
