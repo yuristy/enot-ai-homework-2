@@ -105,3 +105,15 @@
 - `npm run build` и `npm run lint` — без ошибок
 - `npm run dev` — сервер стартует, страница отдаёт 200, без синтаксических/рантайм-ошибок сборки
 - Коммит: `app/.env.example`, `app/.gitignore`, `app/src/lib/supabaseClient.ts`, `app/src/main.tsx`, `app/package.json`, `app/package-lock.json` (Commit 2c5251d); `app/.env.local` в коммит не попал (подтверждено `git status`)
+
+### Task 6: Database schema — tables (Commit d653e06)
+- Написан `app/supabase/schema.sql` с шестью таблицами согласно спецификации:
+  - `public.profiles`: id (uuid FK auth.users), role (enum: seeker/photographer), display_name, created_at
+  - `public.places`: id (auto-identity), name, description, lat/lng (double precision), tags (text[] array), photo_url, source (enum: curated/user), created_by (uuid FK, nullable), created_at
+  - `public.favorites`: composite PK (user_id, place_id), both с каскадным удалением, created_at
+  - `public.requests`: id (auto-identity), request_type (enum: seeking_photographer/offering_photography), place_id (FK, nullable), wanted_date, comment, author_id (uuid FK), created_at
+  - `public.routes`: id (auto-identity), user_id (uuid FK с delete cascade), title, start_lat/start_lng (double precision), place_ids (bigint[] array), created_at
+  - `public.moodboards`: id (auto-identity), user_id (uuid FK с delete cascade), title, place_ids (bigint[] array), created_at
+- Проведена ручная проверка SQL на синтаксическую корректность: все таблицы имеют matching парантезы, точки с запятой в конце, типы данных и constraints соответствуют бриву
+- Примечание: применение schema в Supabase Dashboard (Step 2 из бриева) вне зоны ответственности этой задачи — контроллер выполнит его отдельно
+- Коммит: `app/supabase/schema.sql` (Commit d653e06)
