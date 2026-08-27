@@ -211,3 +211,20 @@
   - Возврат `null` для `null` входа: верно (проверка `!errorMessage` перехватывает null, undefined, empty string)
 - `npx tsc --noEmit` и `npm run lint` (oxlint src) — без ошибок
 - Коммит: `app/src/lib/limits.ts`, `app/tests/limits.test.ts` (Commit 1a51715)
+
+### Task 13: Minimal shared UI kit (Commit 6aa9889)
+- Написан `app/src/components/Button.tsx` — компонент с поддержкой вариантов (primary/secondary), наследует `ButtonHTMLAttributes<HTMLButtonElement>`, комбинирует классы `btn` + `btn--${variant}` + переданный `className`
+- Написан `app/src/components/Card.tsx` — компонент-обёртка для содержимого, поддерживает опциональный `className`, комбинирует классы `card` + переданный `className`
+- Добавлены CSS-стили в `app/src/index.css`:
+  - `.app-layout`: flex column, min-height 100vh
+  - `.app-header`: flex row, space-between, padding 1rem 1.5rem, border-bottom
+  - `.app-header nav`: flex row, gap 1rem
+  - `.nav-link`: text-decoration none, color inherit
+  - `.nav-link--active`: font-weight 700
+  - `.app-main`: flex 1, padding 1.5rem
+  - `.btn`, `.btn--primary`, `.btn--secondary`: базовые стили (padding, border-radius, border, cursor, background)
+  - `.card`: border 1px solid, border-radius 8px, padding 1rem
+- Проверка в dev-сервере (Chrome): страница `http://localhost:5173` загружается, заголовок с навигацией (`Обзор`, `Мои карты`, `Доступные карты`, `Транзакции`) отображается с видимым spacing, активная ссылка (Обзор) выделена жирным шрифтом, что соответствует спецификации
+- `npm run build` — успешно (70 modules, 439.16 KB gzipped)
+- `npm run lint` (oxlint src) — без ошибок
+- Коммит: `app/src/components/Button.tsx`, `app/src/components/Card.tsx`, `app/src/index.css` (Commit 6aa9889)
