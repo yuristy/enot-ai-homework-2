@@ -1,0 +1,16 @@
+# Тяжёлые материалы курса — остаются на диске, не идут в репозиторий
+*.mp4
+
+# macOS
+.DS_Store
+
+# Node / Vite (внутри app/)
+app/node_modules/
+app/dist/
+app/.vite/
+
+# Секреты
+.env
+.env.local
+app/.env
+app/.env.local
