@@ -117,3 +117,17 @@
 - Проведена ручная проверка SQL на синтаксическую корректность: все таблицы имеют matching парантезы, точки с запятой в конце, типы данных и constraints соответствуют бриву
 - Примечание: применение schema в Supabase Dashboard (Step 2 из бриева) вне зоны ответственности этой задачи — контроллер выполнит его отдельно
 - Коммит: `app/supabase/schema.sql` (Commit d653e06)
+
+### Task 7: Row Level Security и триггер дневного лимита (Commit 0d2dea6)
+- Написан `app/supabase/policies.sql` — транскрипция SQL из брифа задачи, сверена программно (побайтовое сравнение fenced-блока брифа с записанным файлом) — результат `MATCH`
+- RLS включён для всех шести таблиц (`profiles`, `places`, `favorites`, `requests`, `routes`, `moodboards`)
+- Политики: `profiles` — select/insert/update только для владельца, insert дополнительно требует `is_anonymous = false` в JWT (только зарегистрированные аккаунты могут иметь профиль); `places`/`requests` — открытый select, insert требует `auth.uid()` = владеющая колонка (`created_by`/`author_id`), фактическое ограничение по квоте — в триггере, не в политике; `favorites`/`routes`/`moodboards` — `for all`, владелец + не-анонимная сессия, и в `using`, и в `with check`
+- Написана функция `enforce_daily_limit()` (plpgsql): сначала проверка исключения для curated-записей places (`tg_table_name = 'places' and new.source = 'curated'` → немедленный `return new`, до проверки автора) — это заранее внесённый в бриф фикс для Task 8, где seed-записи не имеют `created_by`; затем определение автора (`created_by` для places, `author_id` для requests), проверка на null, чтение `is_anonymous` из JWT для выбора лимита (1 анонимно / 5 зарегистрированным), подсчёт записей автора за сегодня и `raise exception 'rate_limit_exceeded'` при достижении лимита
+- Созданы два триггера `places_rate_limit` и `requests_rate_limit` — `before insert ... for each row`, оба вызывают `enforce_daily_limit()`
+- Проведена ручная проверка соответствия колонок схеме из Task 6: `profiles.id`, `places.created_by`, `requests.author_id`, `favorites.user_id`/`place_id`, `routes.user_id`, `moodboards.user_id` — все совпадают
+- Проведена ручная трассировка трёх сценариев логики триггера:
+  - (a) анонимный пользователь вставляет 2-е место за день (`source='user'`) → exemption не срабатывает (source ≠ curated) → today_count=1 ≥ daily_limit=1 → `rate_limit_exceeded` — верно
+  - (b) зарегистрированный пользователь вставляет 6-й запрос за день → today_count=5 ≥ daily_limit=5 → `rate_limit_exceeded` — верно
+  - (c) вставка curated-места с `created_by = null` → exemption срабатывает первым и делает `return new` до проверки `author is null` → вставка проходит без исключения — верно
+- Шаги брифа "применить в Supabase" и "проверить через curl" сознательно пропущены — вне зоны ответственности этой задачи (нет доступа к браузеру/БД), выполнит контроллер отдельно
+- Коммит: `app/supabase/policies.sql` (Commit 0d2dea6)
