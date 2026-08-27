@@ -82,4 +82,36 @@ describe('buildRouteUrl / parseRouteFromUrl round-trip', () => {
   it('returns null for a URL with no route params', () => {
     expect(parseRouteFromUrl('')).toBeNull();
   });
+
+  it.each([
+    '?start=Infinity,37.61&places=1',
+    '?start=55.75,-Infinity&places=1',
+    '?start=91,37.61&places=1',
+    '?start=55.75,181&places=1',
+    '?start=55.75,37.61,10&places=1',
+  ])('returns null for an invalid start: %s', (search) => {
+    expect(parseRouteFromUrl(search)).toBeNull();
+  });
+
+  it.each([
+    '?start=55.75,37.61&places=0',
+    '?start=55.75,37.61&places=-1',
+    '?start=55.75,37.61&places=1.5',
+    '?start=55.75,37.61&places=1,1',
+    '?start=55.75,37.61&places=1,,2',
+  ])('returns null for invalid place ids: %s', (search) => {
+    expect(parseRouteFromUrl(search)).toBeNull();
+  });
+
+  it('accepts coordinate boundaries and safe positive integer ids', () => {
+    expect(parseRouteFromUrl('?start=-90,180&places=1,2')).toEqual({
+      start: { lat: -90, lng: 180 },
+      placeIds: [1, 2],
+    });
+  });
+
+  it('returns null when the URL contains more than 15 places', () => {
+    const placeIds = Array.from({ length: 16 }, (_, index) => index + 1).join(',');
+    expect(parseRouteFromUrl(`?start=55.75,37.61&places=${placeIds}`)).toBeNull();
+  });
 });

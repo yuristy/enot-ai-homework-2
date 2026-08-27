@@ -14,6 +14,7 @@ export type RouteDifficulty = 'easy' | 'medium' | 'hard';
 const EARTH_RADIUS_KM = 6371;
 const WALKING_SPEED_KMH = 4.5;
 const MINUTES_PER_STOP = 15;
+const MAX_SHARED_ROUTE_PLACES = 15;
 
 export function haversineDistanceKm(a: LatLng, b: LatLng): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -96,15 +97,39 @@ export function parseRouteFromUrl(
   if (!startParam || !placesParam) {
     return null;
   }
-  const [latStr, lngStr] = startParam.split(',');
-  const lat = Number(latStr);
-  const lng = Number(lngStr);
-  const placeIds = placesParam
-    .split(',')
-    .filter((s) => s.length > 0)
-    .map(Number);
-  if (Number.isNaN(lat) || Number.isNaN(lng) || placeIds.some(Number.isNaN)) {
+
+  const startParts = startParam.split(',');
+  const placeParts = placesParam.split(',');
+  if (
+    startParts.length !== 2 ||
+    placeParts.length === 0 ||
+    placeParts.length > MAX_SHARED_ROUTE_PLACES ||
+    placeParts.some((part) => part.trim().length === 0)
+  ) {
     return null;
   }
+
+  const [latStr, lngStr] = startParts;
+  const lat = Number(latStr);
+  const lng = Number(lngStr);
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return null;
+  }
+
+  const placeIds = placeParts.map(Number);
+  if (
+    placeIds.some((id) => !Number.isSafeInteger(id) || id <= 0) ||
+    new Set(placeIds).size !== placeIds.length
+  ) {
+    return null;
+  }
+
   return { start: { lat, lng }, placeIds };
 }
