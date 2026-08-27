@@ -91,3 +91,17 @@
 - Тест запущен: `npm run test:e2e` → 1 passed (234ms)
 - Smoke-тест сохранён — по требованию brief это базовая проверка boot'а приложения, которая остаётся на месте для последующих feature-веток
 - Коммит с установкой Playwright: `app/package.json`, `app/package-lock.json`, `app/playwright.config.ts`, `app/e2e/smoke.spec.ts` (Commit a7cbd4a)
+
+### Task 5: Supabase project, client, and anonymous session bootstrap (Commit 2c5251d)
+- Проект Supabase `moscow-photo-map` создан контроллером через браузерную автоматизацию заранее (шаг вне зоны ответственности этой задачи)
+- Получена точная версия `@supabase/supabase-js`: 2.112.4 (npm view), установлена с `--save-exact` — конфликтов peer dependencies с React 19 не обнаружено
+- Создан `app/.env.example` с плейсхолдерами `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`
+- Создан `app/.env.local` (не коммитится) с реальными URL и publishable-ключом проекта
+- Проверено: корневой `.gitignore` уже игнорирует `app/.env` и `app/.env.local`; в `app/.gitignore` добавлена секция `# Secrets` с явными `.env`/`.env.local` (belt-and-suspenders для тех, кто открывает `app/` напрямую)
+- Написан `app/src/lib/supabaseClient.ts`: экспортирует `supabase` (клиент), `ensureSession()` (переиспользует существующую сессию или создаёт анонимную через `signInAnonymously()`) и `isAnonymousSession()`
+- В `app/src/main.tsx` добавлен вызов `ensureSession().catch(...)` перед `createRoot(...).render(...)`; существующий `BrowserRouter`/render-код из Task 2 не тронут
+- Проверка через `curl` к `https://eksnsyyiwqarpllrhbhe.supabase.co/auth/v1/settings` с publishable-ключом вернула HTTP 200 с конфигурацией auth — пара URL/ключ валидна
+- Обнаружено и задокументировано как concern: в настройках проекта `anonymous_users: false` — анонимные вход отключены на уровне Supabase Auth Providers, из-за чего `signInAnonymously()` возвращает `422 anonymous_provider_disabled`; код `ensureSession()` корректно перехватывает эту ошибку и логирует её через `console.error`, приложение не падает, но фактический анонимный вход не срабатывает, пока настройка не будет включена вручную в дашборде (Authentication → Sign In / Providers → Anonymous Sign-Ins) — вне моих инструментов (нет доступа к браузеру/Management API)
+- `npm run build` и `npm run lint` — без ошибок
+- `npm run dev` — сервер стартует, страница отдаёт 200, без синтаксических/рантайм-ошибок сборки
+- Коммит: `app/.env.example`, `app/.gitignore`, `app/src/lib/supabaseClient.ts`, `app/src/main.tsx`, `app/package.json`, `app/package-lock.json` (Commit 2c5251d); `app/.env.local` в коммит не попал (подтверждено `git status`)
