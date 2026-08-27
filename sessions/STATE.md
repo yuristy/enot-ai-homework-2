@@ -3,9 +3,61 @@
 > Обновляется в конце каждой сессии. Описывает «как есть сейчас», а не
 > историю изменений — старое перезаписывается.
 
-**Обновлено:** 2026-08-27, сессия 1, Task 15 (foundation exit checkpoint)
+**Обновлено:** 2026-08-27, ветка `feature/map-routes` (worktree
+`../work-map-routes`), Task 8 (feature exit checkpoint)
 
 ## Готово
+
+### `feature/map-routes` (эта ветка, задачи 1–8 плана
+`docs/superpowers/plans/2026-08-27-02-feature-map-routes.md`)
+
+- Экран карты `app/src/features/map/MapScreen.tsx`, собирающий все части
+  фичи: `PlacesMap` (react-leaflet, маркеры curated/user, попап с кнопкой
+  добавления в маршрут, клик по пустому месту карты задаёт стартовую
+  точку, полилиния построенного маршрута), `TagFilter` (фильтр по тегам,
+  список тегов считается по нефильтрованному списку мест), `RouteTray`
+  (счётчик выбранных мест, геолокация/сброс старта, копирование ссылки на
+  маршрут), `RouteSummary` (дистанция/время/сложность, текст явно говорит
+  «по прямой» — расстояния по прямой линии, не по дорогам, спека §15),
+  `AddPlaceForm` (форма добавления места гостем/зарегистрированным
+  пользователем, предупреждение о близких дублях с подтверждением
+  повторной отправкой, обработка ошибки лимита текстом из `lib/limits.ts`
+  без своей копии).
+- `app/src/features/map/usePlaces.ts` — хук загрузки мест из Supabase,
+  использует общий маппер `rowToPlace` из `lib/mappers.ts` (не дублирует
+  его локально).
+- `app/src/features/map/useRouteState.ts` — `routeReducer` (чистый,
+  протестирован без React: TOGGLE add/remove, SET_START, CLEAR_START,
+  LOAD) + обёртка-хук `useRouteState`, синхронизация с URL через
+  `parseRouteFromUrl`/`buildRouteUrl` из уже готового `lib/route.ts`.
+- react-leaflet 5.0.0 + leaflet 1.9.4 + @types/leaflet 1.9.22 — маркеры
+  доступны с клавиатуры (`<Marker keyboard>`), подтверждено e2e-тестом.
+- e2e: `app/e2e/route-sharing.spec.ts` (гость строит маршрут из 2+ мест,
+  копирует ссылку, открывает её на новой странице — маршрут
+  восстанавливается идентично) и `app/e2e/map-keyboard-nav.spec.ts` (Tab
+  доходит до маркера, Enter открывает попап) — оба зелёные, без
+  скипов/ослабленных проверок (это ровно тот пробел, который поймал
+  аудит ДЗ №1). `playwright.config.ts` дополнен
+  `permissions: ['clipboard-read', 'clipboard-write']`.
+- Vitest: 6 файлов, 33 теста, все зелёные (было 3 файла/18 тестов на
+  Foundation, добавлены тесты `useRouteState.test.ts` в TDD-стиле).
+- **Task 8 — feature exit checkpoint пройден.** Прогнано вручную из
+  `app/` 2026-08-27: `npm run build` (`tsc -b && vite build`, ✓, есть
+  безобидное предупреждение о размере чанка >500kB — не блокирует),
+  `npm run lint` (`oxlint`, без ошибок), `npm run test` (33/33), `npm run
+  test:e2e` (3/3: smoke, route-sharing, map-keyboard-nav, против реального
+  проекта Supabase).
+- **Известный сайд-эффект прогонов e2e/ручной проверки:** тесты Task 6
+  (add-place form) и Task 8 писали реальные записи в таблицу `places`
+  живого Supabase-проекта (в т.ч. id 24–28 от ручной проверки Task 6);
+  DELETE-политики для гостя нет, почистить может только владелец проекта
+  через дашборд — не блокирует MVP, но датасет `source='user'` в проде
+  временно содержит тестовые записи.
+- **Ветка НЕ смёржена в `main`** — интеграция трёх feature-веток
+  (`map-routes`, `cabinet`, `requests-moodboard`) выполняется отдельным
+  планом `docs/superpowers/plans/2026-08-27-05-integration.md`.
+
+### Foundation (`main`, задачи 0–15 `docs/superpowers/plans/2026-08-27-01-foundation.md`)
 
 - Скелет Vite + React 19 + TypeScript в `app/` (Task 1).
 - Роутинг с тремя маршрутами-заглушками (`/`, `/requests`, `/cabinet`) через
@@ -56,32 +108,41 @@
 
 ## Не начато
 
-- Три фичи-ветки: `feature/map-routes`, `feature/cabinet`,
-  `feature/requests-moodboard`.
+- Две другие фичи-ветки выполняются параллельно другими контроллерами:
+  `feature/cabinet`, `feature/requests-moodboard` (не эта ветка, не трогать).
 - Дизайн-проход `frontend-design`, независимый аудит, агент-ломатель,
-  демонстрация песочницы, прогон инъекции недоверенного текста.
+  демонстрация песочницы, прогон инъекции недоверенного текста — по плану
+  интеграции, после мёржа всех трёх веток.
 
 ## Известные проблемы
 
 - Курируемых мест — 12 из ориентировочных ~40 из спеки; остальные
   добавляются через `/add-place` по мере необходимости, не блокирует MVP.
+- `RouteSummary` рендерится с нулевыми значениями (0.0 км, 0 мин, «Лёгкий»),
+  если стартовая точка задана, но не выбрано ни одного места — так задано
+  буквальным кодом плана (нет проверки `selectedPlaces.length` перед
+  рендером), решение оставлено ревьюером как minor/plan-mandated, не
+  блокирует MVP.
+- В таблице `places` живого Supabase-проекта остались тестовые записи
+  (`source='user'`, id 24–28 и, вероятно, ещё несколько от e2e-прогонов)
+  от ручной проверки Task 6/8 этой ветки — удалить может только владелец
+  проекта, DELETE-политики для клиента нет.
 
 ## Следующий шаг
 
-Foundation-план (`docs/superpowers/plans/2026-08-27-01-foundation.md`,
-задачи 0–15) полностью завершён и закрыт этим checkpoint'ом. Дальше —
-создать три git worktree (`feature/map-routes`, `feature/cabinet`,
-`feature/requests-moodboard`) и запустить по независимому агенту в каждом,
-параллельно, согласно планам:
+`feature/map-routes` (эта ветка, worktree `../work-map-routes`) — задачи
+1–8 полностью завершены, ревью каждой задачи прошло чисто (одна
+поправка контроллера в Task 7 задокументирована в SDD-ledger:
+`.superpowers/sdd/2026-08-27-02-feature-map-routes/progress.md`).
+Финальный сквозной ревью всей ветки — следующий шаг перед сдачей.
 
-- `docs/superpowers/plans/2026-08-27-02-feature-map-routes.md`
-- `docs/superpowers/plans/2026-08-27-03-feature-cabinet.md`
-- `docs/superpowers/plans/2026-08-27-04-feature-requests-moodboard.md`
+Ветка НЕ смёржена в `main`. Интеграция трёх feature-веток
+(`map-routes`, `cabinet`, `requests-moodboard`) — отдельный план
+`docs/superpowers/plans/2026-08-27-05-integration.md`, вне зоны
+ответственности этой ветки.
 
-**Bootstrap каждого worktree (иначе приложение падает на старте с
-`supabaseUrl is required.`):**
+**Bootstrap worktree (уже выполнено для `../work-map-routes`, актуально
+для остальных двух, если ещё не сделано):**
 `cp <repo-root>/app/.env.local <worktree>/app/.env.local && cd <worktree>/app && npm install`
-перед первым запуском — `.env.local` игнорируется git и не копируется
-автоматически, `node_modules/` в worktree тоже нет.
-
-После них — интеграция по `docs/superpowers/plans/2026-08-27-05-integration.md`.
+— `.env.local` игнорируется git и не копируется автоматически,
+`node_modules/` в worktree тоже нет.
