@@ -28,7 +28,12 @@ test('guest builds a route, shares the URL, and it reopens identically', async (
 
   await expect(page.getByText(/Маршрут:/)).toBeVisible();
   await expect(page.getByText('Выбрано мест: 3')).toBeVisible();
-  const firstSummary = await page.getByText(/Маршрут:/).innerText();
+  // textContent(), not innerText(): the design pass added a CSS text-transform
+  // to this element, and innerText() is render-aware (would capture the
+  // upper-cased text) while toHaveText() compares against the raw DOM text —
+  // comparing textContent() on both sides keeps the test about the underlying
+  // data being identical, not about a presentational transform.
+  const firstSummary = (await page.getByText(/Маршрут:/).textContent()) ?? '';
 
   await page.getByText('Скопировать ссылку на маршрут').click();
   const copiedUrl = await page.evaluate(() => navigator.clipboard.readText());

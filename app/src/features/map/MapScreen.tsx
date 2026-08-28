@@ -57,15 +57,17 @@ export function MapScreen() {
   return (
     <div>
       <TagFilter allTags={allTags} activeTags={activeTags} onToggle={toggleTag} />
-      <PlacesMap
-        places={visiblePlaces}
-        selectedIds={new Set(state.selectedIds)}
-        onToggleSelect={toggleSelected}
-        onMapClickSetStart={setStart}
-        onSetStartFromPlace={(place) => setStart({ lat: place.lat, lng: place.lng })}
-        routePolyline={polyline}
-        startPoint={state.start ?? undefined}
-      />
+      <div className="map-frame viewfinder">
+        <PlacesMap
+          places={visiblePlaces}
+          selectedIds={new Set(state.selectedIds)}
+          onToggleSelect={toggleSelected}
+          onMapClickSetStart={setStart}
+          onSetStartFromPlace={(place) => setStart({ lat: place.lat, lng: place.lng })}
+          routePolyline={polyline}
+          startPoint={state.start ?? undefined}
+        />
+      </div>
       <RouteTray
         selectedCount={state.selectedIds.length}
         hasStart={state.start !== null}
