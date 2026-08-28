@@ -16,6 +16,17 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       setError(signUpError.message);
       return;
     }
+    // `updateUser` flips the in-memory user object's `is_anonymous` to false
+    // immediately, but the JWT already on this session still carries the old
+    // `is_anonymous: true` claim until the token is refreshed — RLS policies
+    // read the JWT claim, not the user object, so the first `profiles` write
+    // would otherwise fail with a row-level-security violation. Force a
+    // refresh so the new claim lands before any registered-only write runs.
+    const { error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) {
+      setError(refreshError.message);
+      return;
+    }
     onSuccess();
   }
 
