@@ -10,24 +10,35 @@ export function RequestForm({ onCreated }: { onCreated: () => void }) {
   const [wantedDate, setWantedDate] = useState('');
   const [comment, setComment] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setMessage(null);
-    const { error } = await create({
-      requestType,
-      placeId: null,
-      wantedDate: wantedDate || null,
-      comment,
-    });
-    if (error) {
-      setMessage(error);
+    const trimmedComment = comment.trim();
+    if (!trimmedComment) {
+      setMessage('Комментарий не может быть пустым.');
       return;
     }
-    setComment('');
-    setWantedDate('');
-    setMessage('Заявка опубликована.');
-    onCreated();
+    setMessage(null);
+    setSubmitting(true);
+    try {
+      const { error } = await create({
+        requestType,
+        placeId: null,
+        wantedDate: wantedDate || null,
+        comment: trimmedComment,
+      });
+      if (error) {
+        setMessage(error);
+        return;
+      }
+      setComment('');
+      setWantedDate('');
+      setMessage('Заявка опубликована.');
+      onCreated();
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -62,7 +73,9 @@ export function RequestForm({ onCreated }: { onCreated: () => void }) {
         <textarea value={comment} onChange={(e) => setComment(e.target.value)} required />
       </label>
       {message && <p role="status">{message}</p>}
-      <Button type="submit">Опубликовать заявку</Button>
+      <Button type="submit" disabled={submitting}>
+        Опубликовать заявку
+      </Button>
     </form>
   );
 }
