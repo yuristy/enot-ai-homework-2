@@ -6,7 +6,7 @@ import { MoodboardCollage } from './MoodboardCollage';
 import { useMoodboards } from './useMoodboards';
 
 export function MoodboardScreen() {
-  const { isRegistered, favoritePlaces, moodboards, saveMoodboard } = useMoodboards();
+  const { isRegistered, favoritePlaces, moodboards, saveMoodboard, error } = useMoodboards();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   if (!isRegistered) {
@@ -14,7 +14,12 @@ export function MoodboardScreen() {
   }
 
   if (favoritePlaces.length === 0) {
-    return <p>Сначала добавьте что-то в избранное на карте.</p>;
+    return (
+      <div>
+        {error && <p role="status">{error}</p>}
+        <p>Сначала добавьте что-то в избранное на карте.</p>
+      </div>
+    );
   }
 
   function toggle(id: number) {
@@ -31,6 +36,7 @@ export function MoodboardScreen() {
   return (
     <div>
       <h2>Мудборд</h2>
+      {error && <p role="status">{error}</p>}
       <ul>
         {favoritePlaces.map((place) => (
           <li key={place.id}>

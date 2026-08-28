@@ -31,6 +31,7 @@ export function useMoodboards() {
   const [favoritePlaces, setFavoritePlaces] = useState<Place[]>([]);
   const [moodboards, setMoodboards] = useState<Moodboard[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -39,14 +40,20 @@ export function useMoodboards() {
       setIsRegistered(false);
       setFavoritePlaces([]);
       setMoodboards([]);
+      setError(null);
       return;
     }
     setIsRegistered(true);
+    setError(null);
 
-    const { data: favoriteRows } = await supabase
+    const { data: favoriteRows, error: favoritesError } = await supabase
       .from('favorites')
       .select('place_id, places(*)')
       .eq('user_id', session.user.id);
+    if (favoritesError) {
+      setError('Не удалось загрузить избранное.');
+      return;
+    }
     const rows = (favoriteRows ?? []) as unknown as FavoriteWithPlaceRow[];
     setFavoritePlaces(
       rows.map((row) => ({
@@ -63,11 +70,15 @@ export function useMoodboards() {
       })),
     );
 
-    const { data: moodboardRows } = await supabase
+    const { data: moodboardRows, error: moodboardsError } = await supabase
       .from('moodboards')
       .select('*')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
+    if (moodboardsError) {
+      setError('Не удалось загрузить мудборды.');
+      return;
+    }
     setMoodboards(
       ((moodboardRows ?? []) as MoodboardRow[]).map((row) => ({
         id: row.id,
@@ -87,13 +98,17 @@ export function useMoodboards() {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
     if (!session || isAnonymousSession(session)) return;
-    await supabase.from('moodboards').insert({
+    const { error: insertError } = await supabase.from('moodboards').insert({
       user_id: session.user.id,
       title: title ?? null,
       place_ids: placeIds,
     });
+    if (insertError) {
+      setError('Не удалось сохранить мудборд.');
+      return;
+    }
     await load();
   }
 
-  return { isRegistered, favoritePlaces, moodboards, saveMoodboard };
+  return { isRegistered, favoritePlaces, moodboards, saveMoodboard, error };
 }
