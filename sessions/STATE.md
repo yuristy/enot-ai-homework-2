@@ -3,7 +3,7 @@
 > Обновляется в конце каждой сессии. Описывает «как есть сейчас», а не
 > историю изменений — старое перезаписывается.
 
-**Обновлено:** 2026-08-27, сессия 1, Task 15 (foundation exit checkpoint)
+**Обновлено:** 2026-08-28, ветка `feature/requests-moodboard`, Task 7 (exit checkpoint)
 
 ## Готово
 
@@ -50,14 +50,63 @@
     репозиторию не дал совпадений — ключ нигде не закоммичен, живёт только
     в негейченном `app/.env.local`.
 
+- **Ветка `feature/requests-moodboard` (план
+  `docs/superpowers/plans/2026-08-27-04-feature-requests-moodboard.md`)
+  завершена и прошла ревью.** Публичная лента заявок на фотосъёмку
+  (`app/src/features/requests/`): чтение доступно всем без авторизации
+  (`RequestsScreen`, `RequestCard`, хук `useRequests`), создание —
+  `RequestForm` с дневным лимитом через уже существующий Postgres-триггер
+  и `lib/limits.ts` для текста ошибки; `useRequests.create()` использует
+  `ensureSession()` (не голый `getSession()`) — гарантирует наличие сессии
+  до вставки, независимо от гонки с анонимным входом в `main.tsx`.
+  Мудборды (`app/src/features/moodboard/`): чистая логика с тестами
+  (`palette.ts` — `extractAverageColor`, `collageGridTemplate`), экран
+  сборки коллажа из избранного для зарегистрированных аккаунтов
+  (`MoodboardScreen`, `MoodboardCollage`, хук `useMoodboards` с явным
+  состоянием ошибки на всех трёх обращениях к Supabase — загрузка
+  избранного, загрузка мудбордов, сохранение), с понятными сообщениями
+  для гостя («доступно только зарегистрированным») и для пустого
+  избранного. Маршрут `/moodboard` подключён в `App.tsx`, пункт меню — в
+  `Header.tsx`. E2e-тест `app/e2e/requests-limit.spec.ts` проверяет
+  golden path гостя (одна заявка проходит, вторая в тот же день
+  блокируется) на реальном Supabase-проекте.
+  - Попутно найден и исправлен реальный баг живого триггера
+    `enforce_daily_limit()` (общая инфраструктура Foundation, не файлы
+    этой ветки): функция обращалась к `new.source` в одном булевом
+    выражении, общем для триггеров и `places`, и `requests` — `requests`
+    не имеет этого поля, из-за чего **любая** вставка в `requests` падала
+    с `record "new" has no field "source"`. Найдено при ручной проверке
+    Task 3, исправлено и применено к живой базе владельцем проекта
+    (коммит `60d48fc` в `main`, не в этой ветке — файл общий).
+  - Попутно найден и исправлен баг в `useRequests.ts` (Task 2, коммит
+    `91aefd2`): `fetchRequests()` выставлял `loading=true` на каждый
+    вызов, включая refetch после успешного создания — `RequestsScreen`
+    при `loading=true` размонтирует всё дерево, включая `RequestForm` с
+    его локальным сообщением «Заявка опубликована.», так что
+    подтверждение пользователь фактически не видел. Исправлено флагом
+    `hasLoadedOnce`, чтобы состояние загрузки показывалось только на
+    самый первый fetch.
+  - **Известный, осознанно отложенный пробел** (зафиксирован планом
+    заранее, не случайный недосмотр): `extractAverageColor` протестирован
+    изолированно, но не подключён к реальным пикселям через offscreen
+    `<canvas>` — курированные seed-данные не имеют `photo_url`, коллаж
+    рисует плашки с именем места вместо усреднённого цвета. Подключение —
+    отдельная небольшая задача после того, как в базе появятся реальные
+    фото (через `/add-place`).
+  - Полный набор проверок пройден: `npm run build`, `npm run lint`,
+    `npm run test` (33/33), `npm run test:e2e` (2/2, включая новый
+    `requests-limit.spec.ts`) — все зелёные на момент этого checkpoint'а.
+  - Ветка НЕ смёржена в `main` и её worktree НЕ удалён — по плану интеграции
+    (`docs/superpowers/plans/2026-08-27-05-integration.md`) это делает
+    отдельный процесс после того, как все три фичи-ветки готовы.
+
 ## В работе
 
 - Ничего не оставлено на середине правки в момент записи этого файла.
 
 ## Не начато
 
-- Три фичи-ветки: `feature/map-routes`, `feature/cabinet`,
-  `feature/requests-moodboard`.
+- Слияние трёх фичи-веток в `main` по плану интеграции.
 - Дизайн-проход `frontend-design`, независимый аудит, агент-ломатель,
   демонстрация песочницы, прогон инъекции недоверенного текста.
 
@@ -65,23 +114,17 @@
 
 - Курируемых мест — 12 из ориентировочных ~40 из спеки; остальные
   добавляются через `/add-place` по мере необходимости, не блокирует MVP.
+- См. выше «известный, осознанно отложенный пробел» про
+  `extractAverageColor` в мудбордах.
 
 ## Следующий шаг
 
-Foundation-план (`docs/superpowers/plans/2026-08-27-01-foundation.md`,
-задачи 0–15) полностью завершён и закрыт этим checkpoint'ом. Дальше —
-создать три git worktree (`feature/map-routes`, `feature/cabinet`,
-`feature/requests-moodboard`) и запустить по независимому агенту в каждом,
-параллельно, согласно планам:
-
-- `docs/superpowers/plans/2026-08-27-02-feature-map-routes.md`
-- `docs/superpowers/plans/2026-08-27-03-feature-cabinet.md`
-- `docs/superpowers/plans/2026-08-27-04-feature-requests-moodboard.md`
+`feature/requests-moodboard` готова к интеграции наравне с
+`feature/map-routes` и `feature/cabinet` — см.
+`docs/superpowers/plans/2026-08-27-05-integration.md`.
 
 **Bootstrap каждого worktree (иначе приложение падает на старте с
 `supabaseUrl is required.`):**
 `cp <repo-root>/app/.env.local <worktree>/app/.env.local && cd <worktree>/app && npm install`
 перед первым запуском — `.env.local` игнорируется git и не копируется
 автоматически, `node_modules/` в worktree тоже нет.
-
-После них — интеграция по `docs/superpowers/plans/2026-08-27-05-integration.md`.
