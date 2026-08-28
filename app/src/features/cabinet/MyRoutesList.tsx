@@ -13,7 +13,11 @@ export function MyRoutesList() {
     <div>
       {routes.map((route) => (
         <Card key={route.id}>
-          <a href={buildRouteUrl(route.startLat, route.startLng, route.placeIds)}>
+          {/* buildRouteUrl returns a query-only reference ("?start=...&places=...");
+              anchoring it to "/" is required so the link opens the map screen
+              (mounted at "/" by feature/map-routes) rather than resolving against
+              the current "/cabinet" path per RFC 3986 §5.3. */}
+          <a href={`/${buildRouteUrl(route.startLat, route.startLng, route.placeIds)}`}>
             {route.title ?? `Маршрут от ${new Date(route.createdAt).toLocaleDateString('ru-RU')}`}
           </a>
         </Card>
