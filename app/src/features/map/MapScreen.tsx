@@ -4,7 +4,7 @@ import { RouteTray } from './RouteTray';
 import { RouteSummary } from './RouteSummary';
 import { TagFilter } from './TagFilter';
 import { AddPlaceForm } from './AddPlaceForm';
-import { useRouteState } from './useRouteState';
+import { useRouteState, type StartPoint } from './useRouteState';
 import { usePlaces } from './usePlaces';
 
 export function MapScreen() {
@@ -13,6 +13,21 @@ export function MapScreen() {
     useRouteState(places);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
+  // Clicking the map normally sets the route's start point. While the
+  // add-place form is "picking" a location, the same click instead fills
+  // its coordinate fields — typing raw lat/lng by hand is the exact pain
+  // point this exists to avoid.
+  const [pickingPlaceLocation, setPickingPlaceLocation] = useState(false);
+  const [pickedPlaceLocation, setPickedPlaceLocation] = useState<StartPoint | null>(null);
+
+  function handleMapClick(point: StartPoint) {
+    if (pickingPlaceLocation) {
+      setPickedPlaceLocation(point);
+      setPickingPlaceLocation(false);
+    } else {
+      setStart(point);
+    }
+  }
 
   const allTags = Array.from(new Set(places.flatMap((p) => p.tags))).sort();
 
@@ -57,12 +72,15 @@ export function MapScreen() {
   return (
     <div>
       <TagFilter allTags={allTags} activeTags={activeTags} onToggle={toggleTag} />
-      <div className="map-frame viewfinder">
+      {pickingPlaceLocation && (
+        <p role="status">Кликните по карте, чтобы задать координаты нового места.</p>
+      )}
+      <div className={`map-frame viewfinder${pickingPlaceLocation ? ' map-frame--picking' : ''}`}>
         <PlacesMap
           places={visiblePlaces}
           selectedIds={new Set(state.selectedIds)}
           onToggleSelect={toggleSelected}
-          onMapClickSetStart={setStart}
+          onMapClickSetStart={handleMapClick}
           onSetStartFromPlace={(place) => setStart({ lat: place.lat, lng: place.lng })}
           routePolyline={polyline}
           startPoint={state.start ?? undefined}
@@ -86,7 +104,13 @@ export function MapScreen() {
           startLng={state.start!.lng}
         />
       )}
-      <AddPlaceForm existingPlaces={places} onSubmitted={refetch} />
+      <AddPlaceForm
+        existingPlaces={places}
+        onSubmitted={refetch}
+        pickedLocation={pickedPlaceLocation}
+        picking={pickingPlaceLocation}
+        onStartPicking={() => setPickingPlaceLocation(true)}
+      />
     </div>
   );
 }

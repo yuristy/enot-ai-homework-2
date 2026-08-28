@@ -1,5 +1,6 @@
 // app/src/features/cabinet/CabinetScreen.tsx
 import { useState } from 'react';
+import { Button } from '../../components/Button';
 import { SignInForm } from './SignInForm';
 import { SignUpForm } from './SignUpForm';
 import { ProfileForm } from './ProfileForm';
@@ -23,9 +24,21 @@ export function CabinetScreen() {
           Кабинет нужен, если вы хотите сохранять избранное, маршруты или мудборды —
           и особенно если хотите откликаться на заявки как фотограф или искать его.
         </p>
-        <div>
-          <button type="button" onClick={() => setMode('signUp')}>Регистрация</button>
-          <button type="button" onClick={() => setMode('signIn')}>Вход</button>
+        <div className="auth-mode-toggle">
+          <Button
+            type="button"
+            variant={mode === 'signUp' ? 'primary' : 'secondary'}
+            onClick={() => setMode('signUp')}
+          >
+            Регистрация
+          </Button>
+          <Button
+            type="button"
+            variant={mode === 'signIn' ? 'primary' : 'secondary'}
+            onClick={() => setMode('signIn')}
+          >
+            Вход
+          </Button>
         </div>
         {mode === 'signUp' ? (
           <SignUpForm onSuccess={refreshProfile} />

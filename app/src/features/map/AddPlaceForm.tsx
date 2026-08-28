@@ -1,17 +1,27 @@
 // app/src/features/map/AddPlaceForm.tsx
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { findNearbyDuplicates } from '../../lib/places';
 import { getLimitErrorMessage } from '../../lib/limits';
 import { supabase, isAnonymousSession, ensureSession } from '../../lib/supabaseClient';
 import type { Place } from '../../lib/types';
+import type { StartPoint } from './useRouteState';
 
 export function AddPlaceForm({
   existingPlaces,
   onSubmitted,
+  pickedLocation,
+  picking,
+  onStartPicking,
 }: {
   existingPlaces: Place[];
   onSubmitted: () => void;
+  // Typing exact decimal coordinates by hand is unrealistic for most users —
+  // clicking the map is the primary path; the fields below stay editable as
+  // a fallback for anyone who does have exact coordinates to paste in.
+  pickedLocation: StartPoint | null;
+  picking: boolean;
+  onStartPicking: () => void;
 }) {
   const [name, setName] = useState('');
   const [lat, setLat] = useState('');
@@ -19,6 +29,13 @@ export function AddPlaceForm({
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pickedLocation) return;
+    setLat(pickedLocation.lat.toFixed(6));
+    setLng(pickedLocation.lng.toFixed(6));
+    setDuplicateWarning(null);
+  }, [pickedLocation]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -90,26 +107,35 @@ export function AddPlaceForm({
         Название
         <input value={name} onChange={(e) => setName(e.target.value)} />
       </label>
-      <label>
-        Широта
-        <input
-          value={lat}
-          onChange={(e) => {
-            setLat(e.target.value);
-            setDuplicateWarning(null);
-          }}
-        />
-      </label>
-      <label>
-        Долгота
-        <input
-          value={lng}
-          onChange={(e) => {
-            setLng(e.target.value);
-            setDuplicateWarning(null);
-          }}
-        />
-      </label>
+      <div className="coords-picker">
+        <Button type="button" variant="secondary" onClick={onStartPicking} disabled={picking}>
+          {picking ? 'Кликните по карте…' : '📍 Указать точку на карте'}
+        </Button>
+        <div className="coords-picker__fields">
+          <label>
+            Широта
+            <input
+              value={lat}
+              inputMode="decimal"
+              onChange={(e) => {
+                setLat(e.target.value);
+                setDuplicateWarning(null);
+              }}
+            />
+          </label>
+          <label>
+            Долгота
+            <input
+              value={lng}
+              inputMode="decimal"
+              onChange={(e) => {
+                setLng(e.target.value);
+                setDuplicateWarning(null);
+              }}
+            />
+          </label>
+        </div>
+      </div>
       <label>
         Описание
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} />

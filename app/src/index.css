@@ -305,6 +305,12 @@ small {
   border-color: var(--line);
 }
 
+.auth-mode-toggle {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
 .btn--secondary:hover:not(:disabled) {
   border-color: var(--accent);
 }
@@ -466,6 +472,25 @@ legend {
 
 .map-frame .leaflet-container {
   border-radius: var(--radius);
+}
+
+.map-frame--picking .leaflet-container {
+  cursor: crosshair;
+}
+
+.coords-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.coords-picker__fields {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.coords-picker__fields label {
+  flex: 1;
 }
 
 .leaflet-popup-content-wrapper {
