@@ -3,7 +3,7 @@
 > Обновляется в конце каждой сессии. Описывает «как есть сейчас», а не
 > историю изменений — старое перезаписывается.
 
-**Обновлено:** 2026-08-27, сессия 1, Task 15 (foundation exit checkpoint)
+**Обновлено:** 2026-08-28, сессия 1, feature/cabinet Task 8 (exit checkpoint)
 
 ## Готово
 
@@ -50,14 +50,61 @@
     репозиторию не дал совпадений — ключ нигде не закоммичен, живёт только
     в негейченном `app/.env.local`.
 
+- **Ветка `feature/cabinet` (план
+  `docs/superpowers/plans/2026-08-27-03-feature-cabinet.md`) завершена.**
+  Личный кабинет для зарегистрированных аккаунтов (`app/src/features/cabinet/`):
+  `AuthProvider`/`useAuth` — единый источник `{ session, isAnonymous, profile,
+  refreshProfile }`, смонтирован вокруг всего роутинга в `App.tsx`; вход/
+  регистрация (`SignInForm`, `SignUpForm` — регистрация переводит анонимную
+  сессию в постоянную через `supabase.auth.updateUser`, сохраняя `auth.uid()`
+  и все ранее созданные им места/заявки); профиль с ролью по умолчанию
+  (`ProfileForm`, чистый валидатор `validateProfileRole` с тестами);
+  избранное (`useFavorites`, `FavoriteButton` — только для зарегистрированных,
+  RLS дополнительно проверяется на UI); «Мои маршруты» (`useMyRoutes`,
+  `MyRoutesList`, `SaveRouteButton` — использует тот же `buildRouteUrl` из
+  `lib/route.ts`, что и `feature/map-routes`, для совместимых ссылок).
+  `CabinetScreen` собирает всё на `/cabinet`. `FavoriteButton` и
+  `SaveRouteButton` **построены, но не подключены** к экрану карты —
+  композиция явно отложена до интеграции (файлы `feature/map-routes` эта
+  ветка не трогает по Global Constraints плана).
+  - **Найден и исправлен реальный баг** (не в плане, вскрылся на e2e):
+    `supabase.auth.updateUser()` при переводе анонимной сессии в постоянную
+    сразу отдаёт обновлённый объект пользователя (`is_anonymous: false`), но
+    JWT текущей сессии остаётся старым до обновления токена — RLS-политики
+    читают именно JWT (`auth.jwt() ->> 'is_anonymous'`), поэтому первая же
+    запись в `profiles` падала с нарушением RLS. Исправлено вызовом
+    `supabase.auth.refreshSession()` сразу после `updateUser()`, до
+    `onSuccess()` (коммит в этой ветке).
+  - **Найден и исправлен второй баг** (тоже вскрылся на e2e, а не в момент
+    написания кода по плану): `main.tsx` запускает анонимный вход как
+    fire-and-forget при загрузке приложения — быстрая отправка формы
+    регистрации (реальный пользователь на медленной сети или Playwright)
+    успевала вызвать `updateUser()` до того, как анонимная сессия вообще
+    появлялась, с ошибкой `Auth session missing!`. Исправлено вызовом
+    `await ensureSession()` в начале `handleSubmit` — идемпотентно благодаря
+    мемоизации в `lib/supabaseClient.ts`.
+  - **Найден и исправлен баг в самом e2e-тесте** (текст из плана,
+    скопирован дословно): `getByText('Кабинет')` неоднозначен — совпадает
+    и с постоянной ссылкой навигации «Кабинет», и (по подстроке) с
+    параграфом «Кабинет нужен…» в анонимном состоянии; Playwright бросает
+    strict-mode violation сразу, без повторных попыток. Заменено на
+    `getByRole('heading', { name: 'Кабинет' })`, указывающее именно на
+    `<h2>` из `CabinetScreen`.
+  - Полный набор проверок пройден: `npm run build`, `npm run lint`,
+    `npm run test` (31/31), `npm run test:e2e` (2/2, включая новый
+    `cabinet-favorites.spec.ts`) — все зелёные на момент этого checkpoint'а.
+  - Ветка НЕ смёржена в `main` и её worktree НЕ удалён — по плану интеграции
+    (`docs/superpowers/plans/2026-08-27-05-integration.md`) это делает
+    отдельный процесс после того, как все три фичи-ветки готовы.
+
 ## В работе
 
 - Ничего не оставлено на середине правки в момент записи этого файла.
 
 ## Не начато
 
-- Три фичи-ветки: `feature/map-routes`, `feature/cabinet`,
-  `feature/requests-moodboard`.
+- Слияние трёх фичи-веток в `main` по плану интеграции, включая композицию
+  `FavoriteButton` в экран карты и `SaveRouteButton` в сводку маршрута.
 - Дизайн-проход `frontend-design`, независимый аудит, агент-ломатель,
   демонстрация песочницы, прогон инъекции недоверенного текста.
 
@@ -68,20 +115,12 @@
 
 ## Следующий шаг
 
-Foundation-план (`docs/superpowers/plans/2026-08-27-01-foundation.md`,
-задачи 0–15) полностью завершён и закрыт этим checkpoint'ом. Дальше —
-создать три git worktree (`feature/map-routes`, `feature/cabinet`,
-`feature/requests-moodboard`) и запустить по независимому агенту в каждом,
-параллельно, согласно планам:
-
-- `docs/superpowers/plans/2026-08-27-02-feature-map-routes.md`
-- `docs/superpowers/plans/2026-08-27-03-feature-cabinet.md`
-- `docs/superpowers/plans/2026-08-27-04-feature-requests-moodboard.md`
+`feature/cabinet` готова к интеграции наравне с `feature/map-routes` и
+`feature/requests-moodboard` — см.
+`docs/superpowers/plans/2026-08-27-05-integration.md`.
 
 **Bootstrap каждого worktree (иначе приложение падает на старте с
 `supabaseUrl is required.`):**
 `cp <repo-root>/app/.env.local <worktree>/app/.env.local && cd <worktree>/app && npm install`
 перед первым запуском — `.env.local` игнорируется git и не копируется
 автоматически, `node_modules/` в worktree тоже нет.
-
-После них — интеграция по `docs/superpowers/plans/2026-08-27-05-integration.md`.
