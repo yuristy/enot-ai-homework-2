@@ -1,22 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from './useAuth';
+import { rowToPlace, type PlaceRow } from '../../lib/mappers';
 import type { Place } from '../../lib/types';
 
-interface FavoriteRow {
+// Shape of the PostgREST embed (`favorites?select=place_id,places(*)`), not
+// itself one of lib/mappers.ts's exports — but `places` is typed from there.
+interface FavoriteWithPlaceRow {
   place_id: number;
-  places: {
-    id: number;
-    name: string;
-    description: string | null;
-    lat: number;
-    lng: number;
-    tags: string[];
-    photo_url: string | null;
-    source: 'curated' | 'user';
-    created_by: string | null;
-    created_at: string;
-  };
+  places: PlaceRow;
 }
 
 export function useFavorites() {
@@ -35,21 +27,8 @@ export function useFavorites() {
       .from('favorites')
       .select('place_id, places(*)')
       .eq('user_id', session.user.id);
-    const rows = (data ?? []) as unknown as FavoriteRow[];
-    setFavorites(
-      rows.map((row) => ({
-        id: row.places.id,
-        name: row.places.name,
-        description: row.places.description,
-        lat: row.places.lat,
-        lng: row.places.lng,
-        tags: row.places.tags,
-        photoUrl: row.places.photo_url,
-        source: row.places.source,
-        createdBy: row.places.created_by,
-        createdAt: row.places.created_at,
-      })),
-    );
+    const rows = (data ?? []) as unknown as FavoriteWithPlaceRow[];
+    setFavorites(rows.map((row) => rowToPlace(row.places)));
     setLoading(false);
   }, [session, isAnonymous]);
 
