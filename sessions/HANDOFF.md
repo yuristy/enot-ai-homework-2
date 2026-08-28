@@ -71,25 +71,55 @@ Foundation-ревью:**
 маршруты (nearest-neighbor, URL-шаринг), тег-фильтр, форма добавления
 места, e2e (route-sharing, keyboard nav).
 
-### `feature/cabinet` — `/Users/yuri/developer/work-cabinet`
+### `feature/cabinet` — `/Users/yuri/developer/work-cabinet` — **8/8, ждёт финального ревью**
 
-**6/8 задач** (`9c200ef` — CabinetScreen собран). Осталось: Task 7
-(Playwright e2e), Task 8 (exit checkpoint), финальный ревью.
+Все 8 задач сделаны контроллером напрямую в этой сессии (без диспетча
+SDD-мета-агента, по решению «стоп новым диспетчам, доделаю сам»). HEAD
+`3872322`. Финальный сквозной ревью (opus) запущен, результат ещё не
+получен.
 
-**Известная проблема, ещё не исправлена:** после апгрейда анонимной
-сессии в обычную через `supabase.auth.updateUser()` JWT не обновляется
-сразу — в нём остаётся старый `is_anonymous: true`, из-за чего первое
-сохранение профиля падает на RLS (`new row violates row-level security
-policy for table "profiles"`). Живёт в `SignUpForm.tsx` /
-`AuthProvider.tsx` (Task 2/3 этой же ветки). Должно быть решено веткой
-cabinet до e2e-теста на регистрацию — иначе тест гарантированно упадёт.
+При написании Task 7 (e2e) нашлись и исправлены **три реальных бага**, не
+пойманных при построчном соответствии плану:
+1. Гонка: `main.tsx` запускает анонимный вход fire-and-forget при загрузке
+   — быстрая отправка формы регистрации могла вызвать `updateUser()` до
+   появления анонимной сессии вообще (`Auth session missing!`).
+   Исправлено `await ensureSession()` в начале `handleSubmit`
+   (`3872322`).
+2. **Ранее известная, теперь исправленная проблема:** `updateUser()`
+   оптимистично отдаёт `is_anonymous: false` в объекте пользователя сразу,
+   но JWT текущей сессии остаётся старым до `refreshSession()` — RLS
+   читает именно JWT, поэтому первая запись в `profiles` падала. Исправлено
+   вызовом `supabase.auth.refreshSession()` сразу после `updateUser()`
+   (`4d23106`). Проверено и независимо через прямые curl-запросы к live
+   Supabase Auth API (signup → updateUser → refresh-token), сервер
+   действительно возвращает `is_anonymous: false` в свежем JWT.
+3. Сам текст e2e-теста из плана был неоднозначен:
+   `getByText('Кабинет')` совпадает и с пунктом навигации, и (по
+   подстроке) с параграфом анонимного гейта — Playwright бросает
+   strict-mode violation мгновенно, без повторов. Заменено на
+   `getByRole('heading', { name: 'Кабинет' })` (`dddd622`).
 
-### `feature/requests-moodboard` — `/Users/yuri/developer/work-requests-moodboard`
+Полный набор проверок зелёный: `build`/`lint`/`test` (31/31)/`test:e2e`
+(2/2). `FavoriteButton`/`SaveRouteButton` построены, но не подключены к
+экрану карты — это явно отложено до интеграции. Ledger:
+`.superpowers/sdd/2026-08-27-03-feature-cabinet/progress.md`.
 
-**5/7 задач** (`05b69fc` — ошибки Supabase в мудборде выведены на экран).
-Именно эта ветка нашла и всех остановила из-за бага триггера (см. выше,
-уже исправлено на `main`). Осталось: Task 6 (Playwright e2e на лимит
-заявок), Task 7 (exit checkpoint), финальный ревью.
+### `feature/requests-moodboard` — `/Users/yuri/developer/work-requests-moodboard` — **ГОТОВО**
+
+**7/7 задач + финальный сквозной ревью (opus) + одна фикс-волна, чисто.**
+HEAD `c9d61fc` (не смёржено, не удалено — ждёт интеграции). Верхние 3
+коммита фикс-волны: `e2caa0f` (RequestsScreen не должен размонтировать
+RequestForm при ошибке рефетча — тот же класс бага, что и раньше
+исправленный для `loading`), `4dfc0da` (блокировка кнопки отправки заявки
+на время запроса + trim непустого комментария), `c9d61fc` (использование
+общего `lib/mappers.ts` вместо задублированного маппинга строк). Ревьюер
+(opus) вердикт: "Ready to merge, with fixes" — критичных находок нет,
+security-периметр (RLS, инъекции, чужие данные) отдельно похвален. 2
+Important-находки и все Minor осознанно оставлены как необязательные до
+мёржа (see ledger). Именно эта ветка нашла и остановила всех из-за бага
+триггера (см. выше, уже исправлено на `main`). Ledger с полной историю
+решений: `.superpowers/sdd/2026-08-27-04-feature-requests-moodboard/progress.md`
+внутри воркдерева (не удалён, ветка не смёржена).
 
 ## Codex — параллельный трек (отдельный вендор, отдельные лимиты)
 
