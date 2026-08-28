@@ -1,6 +1,7 @@
 // app/src/features/cabinet/ProfileForm.tsx
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
 import { supabase } from '../../lib/supabaseClient';
 import type { Profile, ProfileRole } from '../../lib/types';
 
@@ -9,6 +10,7 @@ export function validateProfileRole(value: string): ProfileRole | null {
 }
 
 export function ProfileForm({ profile, onSaved }: { profile: Profile | null; onSaved: () => void }) {
+  const { showToast } = useToast();
   const [role, setRole] = useState(profile?.role ?? '');
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export function ProfileForm({ profile, onSaved }: { profile: Profile | null; onS
       setError(upsertError.message);
       return;
     }
+    showToast('Профиль сохранён.');
     onSaved();
   }
 

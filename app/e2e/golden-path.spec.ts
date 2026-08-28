@@ -75,5 +75,8 @@ test('full golden path: guest browsing through registered cabinet use', async ({
   await page.goto('/requests');
   await page.getByLabel(/Комментарий/).fill('Ищу фотографа, пишите в телеграм @golden');
   await page.getByRole('button', { name: 'Опубликовать заявку' }).click();
-  await expect(page.getByText('Заявка опубликована.')).toBeVisible();
+  // Scoped to <main>: the same text also appears in the success toast
+  // (rendered outside <main>, see components/Toast.tsx) — an unscoped
+  // getByText would resolve to both and fail Playwright's strict mode.
+  await expect(page.getByRole('main').getByText('Заявка опубликована.')).toBeVisible();
 });

@@ -6,8 +6,14 @@ import { TagFilter } from './TagFilter';
 import { AddPlaceForm } from './AddPlaceForm';
 import { useRouteState, type StartPoint } from './useRouteState';
 import { usePlaces } from './usePlaces';
+import { useToast } from '../../components/Toast';
+import { useAuth } from '../cabinet/useAuth';
+import { supabase } from '../../lib/supabaseClient';
+import type { Place } from '../../lib/types';
 
 export function MapScreen() {
+  const { showToast } = useToast();
+  const { session } = useAuth();
   const { places, loading, error, refetch } = usePlaces();
   const { state, toggleSelected, setStart, clearStart, selectedPlaces, built, estimate, shareUrl } =
     useRouteState(places);
@@ -33,6 +39,16 @@ export function MapScreen() {
       addPlaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       addPlaceRef.current?.querySelector('input')?.focus();
     });
+  }
+
+  async function handleDeletePlace(place: Place) {
+    const { error: deleteError } = await supabase.from('places').delete().eq('id', place.id);
+    if (deleteError) {
+      showToast(`Не удалось удалить место: ${deleteError.message}`);
+      return;
+    }
+    showToast('Место удалено.');
+    refetch();
   }
 
   const allTags = Array.from(new Set(places.flatMap((p) => p.tags))).sort();
@@ -85,6 +101,8 @@ export function MapScreen() {
           onToggleSelect={toggleSelected}
           onMapClickSetStart={handleMapClick}
           onSetStartFromPlace={(place) => setStart({ lat: place.lat, lng: place.lng })}
+          onDeletePlace={handleDeletePlace}
+          currentUserId={session?.user.id ?? null}
           routePolyline={polyline}
           startPoint={state.start ?? undefined}
           clickPopupPoint={clickPopupPoint}

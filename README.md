@@ -54,11 +54,13 @@ publishable-ключа Supabase ниже: RLS ограничивает дост�
 1. Создать проект на [supabase.com](https://supabase.com) (free tier достаточно).
    Из Settings → API взять **Project URL** и **anon/publishable key**, вписать
    в `app/.env.local`.
-2. В Supabase Dashboard → **SQL Editor** выполнить три файла **строго в этом
-   порядке** (каждый — отдельным запуском):
+2. В Supabase Dashboard → **SQL Editor** выполнить четыре файла **строго в
+   этом порядке** (каждый — отдельным запуском):
    1. `app/supabase/schema.sql` — шесть таблиц;
    2. `app/supabase/policies.sql` — RLS-политики и триггер дневного лимита;
-   3. `app/supabase/seed.sql` — 12 курируемых мест.
+   3. `app/supabase/storage.sql` — публичный бакет `place-photos` для фото,
+      прикреплённых через форму добавления места;
+   4. `app/supabase/seed.sql` — 12 курируемых мест.
    Курируемые места вставляются именно через SQL Editor: у него нет JWT, и
    только поэтому триггер лимита пропускает строки с `source = 'curated'` —
    через клиентский REST API такая вставка запрещена политикой.

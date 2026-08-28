@@ -5,28 +5,34 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Memoized so concurrent callers share one sign-in round-trip: without this, two
-// callers that both run before the first `signInAnonymously()` resolves would each
-// see "no session" and each mint a separate anonymous user.
-let sessionPromise: Promise<Session> | null = null;
+// Only the in-flight anonymous sign-in is memoized (to dedupe concurrent
+// callers into one round-trip) — the *resolved* session is never cached,
+// because a resolved cache would keep handing out a stale session forever
+// after supabase.auth.signOut(), causing later inserts to carry a user id
+// that no longer matches the JWT actually attached to the request (RLS then
+// rejects them as a mismatch). getSession() itself is a fast local read
+// (no network call), so re-checking it on every call costs nothing.
+let signInPromise: Promise<Session> | null = null;
 
-export function ensureSession(): Promise<Session> {
-  if (!sessionPromise) {
-    sessionPromise = (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        return data.session;
-      }
+export async function ensureSession(): Promise<Session> {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    return data.session;
+  }
+  if (!signInPromise) {
+    signInPromise = (async () => {
       const { data: signInData, error } = await supabase.auth.signInAnonymously();
       if (error || !signInData.session) {
-        // Clear the memo so a failed attempt does not poison every later call.
-        sessionPromise = null;
         throw new Error(`Failed to establish a session: ${error?.message ?? 'unknown error'}`);
       }
       return signInData.session;
     })();
   }
-  return sessionPromise;
+  try {
+    return await signInPromise;
+  } finally {
+    signInPromise = null;
+  }
 }
 
 export function isAnonymousSession(session: Session | null): boolean {

@@ -8,7 +8,18 @@ test('guest signs up, sets a role, and sees an empty cabinet', async ({ page }) 
 
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Пароль').fill('correct horse battery staple');
-  await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
+  // Same real, narrow race documented in golden-path.spec.ts: AuthProvider's
+  // onAuthStateChange reacts to the 'USER_UPDATED' event updateUser() fires
+  // synchronously as part of its own optimistic response, which can flip
+  // isAnonymous (and render the "Кабинет" heading) before SignUpForm's
+  // explicit refreshSession() call has actually landed the new JWT claim —
+  // a plain .click() here was reachable by this test at a ~80% flake rate.
+  // Waiting for the real token-refresh response, not just the heading,
+  // proves the session is genuinely upgraded before anything RLS-gated runs.
+  await Promise.all([
+    page.waitForResponse((res) => res.url().includes('/auth/v1/token?grant_type=refresh_token')),
+    page.getByRole('button', { name: 'Зарегистрироваться' }).click(),
+  ]);
 
   await expect(page.getByRole('heading', { name: 'Кабинет' })).toBeVisible();
 

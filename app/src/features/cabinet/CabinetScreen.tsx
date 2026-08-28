@@ -1,6 +1,8 @@
 // app/src/features/cabinet/CabinetScreen.tsx
 import { useState } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
+import { supabase } from '../../lib/supabaseClient';
 import { SignInForm } from './SignInForm';
 import { SignUpForm } from './SignUpForm';
 import { ProfileForm } from './ProfileForm';
@@ -9,9 +11,16 @@ import { useAuth } from './useAuth';
 import { useFavorites } from './useFavorites';
 
 export function CabinetScreen() {
+  const { showToast } = useToast();
   const { isAnonymous, profile, initializing, refreshProfile } = useAuth();
   const { favorites, loading: favoritesLoading } = useFavorites();
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signUp');
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    showToast('Вы вышли из аккаунта.');
+    await refreshProfile();
+  }
 
   if (initializing) {
     return <p>Загрузка…</p>;
@@ -67,6 +76,11 @@ export function CabinetScreen() {
       )}
       <h3>Мои маршруты</h3>
       <MyRoutesList />
+      <div className="cabinet-signout">
+        <Button type="button" variant="danger" onClick={handleSignOut}>
+          Выйти из профиля
+        </Button>
+      </div>
     </div>
   );
 }

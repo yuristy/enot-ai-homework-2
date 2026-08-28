@@ -1,10 +1,12 @@
 // app/src/features/cabinet/SignInForm.tsx
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
 import { supabase } from '../../lib/supabaseClient';
 import { translateAuthError } from '../../lib/authErrors';
 
 export function SignInForm({ onSuccess }: { onSuccess: () => void }) {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +19,7 @@ export function SignInForm({ onSuccess }: { onSuccess: () => void }) {
       setError(translateAuthError(signInError.message));
       return;
     }
+    showToast('Вы вошли в кабинет.');
     onSuccess();
   }
 

@@ -48,6 +48,13 @@ create policy "places_insert_authenticated" on public.places
     auth.uid() is not null and auth.uid() = created_by and source = 'user'
   );
 
+-- Retrofitted live (see header note): lets the session that added a
+-- user-sourced place remove it again. Scoped to source = 'user' so a
+-- curated row can never be deleted through PostgREST even if created_by
+-- somehow matched (it never does — curated rows have created_by = null).
+create policy "places_delete_own" on public.places
+  for delete using (auth.uid() = created_by and source = 'user');
+
 -- requests: readable by everyone, insertable by any authenticated session (rate-limited below)
 create policy "requests_select_all" on public.requests
   for select using (true);

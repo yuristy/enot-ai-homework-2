@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
 import { useAuth } from './useAuth';
 import { useMyRoutes } from './useMyRoutes';
 
@@ -10,6 +11,7 @@ interface SaveRouteButtonProps {
 }
 
 export function SaveRouteButton({ startLat, startLng, placeIds }: SaveRouteButtonProps) {
+  const { showToast } = useToast();
   const { isAnonymous } = useAuth();
   const { save } = useMyRoutes();
   const [saving, setSaving] = useState(false);
@@ -22,6 +24,7 @@ export function SaveRouteButton({ startLat, startLng, placeIds }: SaveRouteButto
     setSaving(true);
     try {
       await save(startLat, startLng, placeIds);
+      showToast('Маршрут сохранён в кабинет.');
     } finally {
       setSaving(false);
     }

@@ -1,10 +1,12 @@
 // app/src/features/requests/RequestForm.tsx
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
 import { useRequests } from './useRequests';
 import type { RequestType } from '../../lib/types';
 
 export function RequestForm({ onCreated }: { onCreated: () => void }) {
+  const { showToast } = useToast();
   const { create } = useRequests();
   const [requestType, setRequestType] = useState<RequestType>('seeking_photographer');
   const [wantedDate, setWantedDate] = useState('');
@@ -35,6 +37,7 @@ export function RequestForm({ onCreated }: { onCreated: () => void }) {
       setComment('');
       setWantedDate('');
       setMessage('Заявка опубликована.');
+      showToast('Заявка опубликована.');
       onCreated();
     } finally {
       setSubmitting(false);

@@ -1,10 +1,12 @@
 // app/src/features/cabinet/SignUpForm.tsx
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
 import { supabase, ensureSession } from '../../lib/supabaseClient';
 import { translateAuthError } from '../../lib/authErrors';
 
 export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       setError(refreshError.message);
       return;
     }
+    showToast('Регистрация прошла успешно.');
     onSuccess();
   }
 

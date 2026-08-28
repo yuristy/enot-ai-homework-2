@@ -1,11 +1,14 @@
 // app/src/features/map/AddPlaceForm.tsx
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
+import { useToast } from '../../components/Toast';
 import { findNearbyDuplicates } from '../../lib/places';
 import { getLimitErrorMessage } from '../../lib/limits';
 import { supabase, isAnonymousSession, ensureSession } from '../../lib/supabaseClient';
 import type { Place } from '../../lib/types';
 import type { StartPoint } from './useRouteState';
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
 export function AddPlaceForm({
   existingPlaces,
@@ -20,12 +23,18 @@ export function AddPlaceForm({
   // who does have exact coordinates to paste in.
   pickedLocation: StartPoint | null;
 }) {
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [description, setDescription] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  // Bumped after every successful submit to remount the (uncontrollable)
+  // file input and clear its selected file.
+  const [photoInputKey, setPhotoInputKey] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!pickedLocation) return;
@@ -33,6 +42,17 @@ export function AddPlaceForm({
     setLng(pickedLocation.lng.toFixed(6));
     setDuplicateWarning(null);
   }, [pickedLocation]);
+
+  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (file && file.size > MAX_PHOTO_BYTES) {
+      setMessage('Фото слишком большое — максимум 5 МБ.');
+      setPhotoFile(null);
+      setPhotoInputKey((k) => k + 1);
+      return;
+    }
+    setPhotoFile(file);
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -66,36 +86,56 @@ export function AddPlaceForm({
       return;
     }
 
-    let session;
+    setSubmitting(true);
     try {
-      session = await ensureSession();
-    } catch {
-      setMessage('Не удалось установить сессию. Обновите страницу и попробуйте снова.');
-      return;
+      let session;
+      try {
+        session = await ensureSession();
+      } catch {
+        setMessage('Не удалось установить сессию. Обновите страницу и попробуйте снова.');
+        return;
+      }
+
+      let photoUrl: string | null = null;
+      if (photoFile) {
+        const path = `${session.user.id}/${Date.now()}-${photoFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('place-photos').upload(path, photoFile);
+        if (uploadError) {
+          setMessage(`Не удалось загрузить фото: ${uploadError.message}`);
+          return;
+        }
+        photoUrl = supabase.storage.from('place-photos').getPublicUrl(path).data.publicUrl;
+      }
+
+      const { error } = await supabase.from('places').insert({
+        name: trimmedName,
+        description,
+        lat: latNum,
+        lng: lngNum,
+        photo_url: photoUrl,
+        source: 'user',
+        created_by: session.user.id,
+      });
+
+      if (error) {
+        const limitMessage = getLimitErrorMessage(error.message, isAnonymousSession(session));
+        setMessage(limitMessage ?? `Не удалось сохранить: ${error.message}`);
+        return;
+      }
+
+      setName('');
+      setLat('');
+      setLng('');
+      setDescription('');
+      setPhotoFile(null);
+      setPhotoInputKey((k) => k + 1);
+      setDuplicateWarning(null);
+      setMessage('Место добавлено.');
+      showToast('Место добавлено.');
+      onSubmitted();
+    } finally {
+      setSubmitting(false);
     }
-
-    const { error } = await supabase.from('places').insert({
-      name: trimmedName,
-      description,
-      lat: latNum,
-      lng: lngNum,
-      source: 'user',
-      created_by: session.user.id,
-    });
-
-    if (error) {
-      const limitMessage = getLimitErrorMessage(error.message, isAnonymousSession(session));
-      setMessage(limitMessage ?? `Не удалось сохранить: ${error.message}`);
-      return;
-    }
-
-    setName('');
-    setLat('');
-    setLng('');
-    setDescription('');
-    setDuplicateWarning(null);
-    setMessage('Место добавлено.');
-    onSubmitted();
   }
 
   return (
@@ -137,9 +177,15 @@ export function AddPlaceForm({
         Описание
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
+      <label>
+        Фото (необязательно, до 5 МБ)
+        <input key={photoInputKey} type="file" accept="image/*" onChange={handlePhotoChange} />
+      </label>
       {duplicateWarning && <p role="alert">{duplicateWarning}</p>}
       {message && <p role="status">{message}</p>}
-      <Button type="submit">Добавить место</Button>
+      <Button type="submit" disabled={submitting}>
+        {submitting ? 'Добавляем…' : 'Добавить место'}
+      </Button>
     </form>
   );
 }

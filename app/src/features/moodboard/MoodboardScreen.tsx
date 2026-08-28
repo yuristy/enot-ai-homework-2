@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { useToast } from '../../components/Toast';
 import { MoodboardCollage } from './MoodboardCollage';
 import { useMoodboards } from './useMoodboards';
 
 export function MoodboardScreen() {
+  const { showToast } = useToast();
   const { isRegistered, favoritePlaces, moodboards, saveMoodboard, error } = useMoodboards();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -38,6 +40,7 @@ export function MoodboardScreen() {
     setSaving(true);
     try {
       await saveMoodboard(Array.from(selectedIds));
+      showToast('Мудборд сохранён.');
     } finally {
       setSaving(false);
     }
