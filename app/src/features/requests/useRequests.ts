@@ -1,5 +1,5 @@
 // app/src/features/requests/useRequests.ts
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, isAnonymousSession, ensureSession } from '../../lib/supabaseClient';
 import { getLimitErrorMessage } from '../../lib/limits';
 import type { PhotoRequest, RequestType } from '../../lib/types';
@@ -30,9 +30,18 @@ export function useRequests() {
   const [requests, setRequests] = useState<PhotoRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedOnce = useRef(false);
 
   const fetchRequests = useCallback(async () => {
-    setLoading(true);
+    // Only show the full-page loading state for the initial fetch. Refetches
+    // triggered after a successful create (see `create` below) must not flip
+    // `loading` back to true, because RequestsScreen unmounts its whole tree
+    // (including RequestForm and its "Заявка опубликована." success message)
+    // while `loading` is true — that would wipe the just-shown confirmation
+    // before the user ever sees it.
+    if (!hasLoadedOnce.current) {
+      setLoading(true);
+    }
     const { data, error: fetchError } = await supabase
       .from('requests')
       .select('*')
@@ -44,6 +53,7 @@ export function useRequests() {
       setError(null);
     }
     setLoading(false);
+    hasLoadedOnce.current = true;
   }, []);
 
   useEffect(() => {
