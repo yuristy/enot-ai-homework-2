@@ -1,24 +1,24 @@
 // app/src/App.tsx
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { AuthProvider } from './features/cabinet/AuthProvider';
+import { CabinetScreen } from './features/cabinet/CabinetScreen';
 import { MapScreen } from './features/map/MapScreen';
 
 function RequestsPlaceholder() {
   return <h1>Заявки (feature/requests-moodboard)</h1>;
 }
 
-function CabinetPlaceholder() {
-  return <h1>Кабинет (feature/cabinet)</h1>;
-}
-
 export function App() {
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<MapScreen />} />
-        <Route path="/requests" element={<RequestsPlaceholder />} />
-        <Route path="/cabinet" element={<CabinetPlaceholder />} />
-      </Routes>
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<MapScreen />} />
+          <Route path="/requests" element={<RequestsPlaceholder />} />
+          <Route path="/cabinet" element={<CabinetScreen />} />
+        </Routes>
+      </Layout>
+    </AuthProvider>
   );
 }
