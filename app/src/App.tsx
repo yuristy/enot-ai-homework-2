@@ -4,10 +4,8 @@ import { Layout } from './components/Layout';
 import { AuthProvider } from './features/cabinet/AuthProvider';
 import { CabinetScreen } from './features/cabinet/CabinetScreen';
 import { MapScreen } from './features/map/MapScreen';
-
-function RequestsPlaceholder() {
-  return <h1>Заявки (feature/requests-moodboard)</h1>;
-}
+import { RequestsScreen } from './features/requests/RequestsScreen';
+import { MoodboardScreen } from './features/moodboard/MoodboardScreen';
 
 export function App() {
   return (
@@ -15,8 +13,9 @@ export function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<MapScreen />} />
-          <Route path="/requests" element={<RequestsPlaceholder />} />
           <Route path="/cabinet" element={<CabinetScreen />} />
+          <Route path="/requests" element={<RequestsScreen />} />
+          <Route path="/moodboard" element={<MoodboardScreen />} />
         </Routes>
       </Layout>
     </AuthProvider>
