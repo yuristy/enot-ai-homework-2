@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { supabase } from '../../lib/supabaseClient';
+import { translateAuthError } from '../../lib/authErrors';
 
 export function SignInForm({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ export function SignInForm({ onSuccess }: { onSuccess: () => void }) {
     setError(null);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     if (signInError) {
-      setError(signInError.message);
+      setError(translateAuthError(signInError.message));
       return;
     }
     onSuccess();

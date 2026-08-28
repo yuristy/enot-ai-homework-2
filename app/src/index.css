@@ -410,6 +410,14 @@ legend {
   margin: calc(var(--space-3) * -1) 0 0;
 }
 
+.request-comment {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 /* -- map screen -------------------------------------------------------------- */
 
 .tag-filter {

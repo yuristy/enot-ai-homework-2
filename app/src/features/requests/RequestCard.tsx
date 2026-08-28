@@ -12,7 +12,7 @@ export function RequestCard({ request }: { request: PhotoRequest }) {
     <Card>
       <strong>{TYPE_LABEL[request.requestType]}</strong>
       {request.wantedDate && <div>Дата: {request.wantedDate}</div>}
-      {request.comment && <p>{request.comment}</p>}
+      {request.comment && <p className="request-comment">{request.comment}</p>}
       <small>{new Date(request.createdAt).toLocaleDateString('ru-RU')}</small>
     </Card>
   );

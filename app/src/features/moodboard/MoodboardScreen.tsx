@@ -8,6 +8,7 @@ import { useMoodboards } from './useMoodboards';
 export function MoodboardScreen() {
   const { isRegistered, favoritePlaces, moodboards, saveMoodboard, error } = useMoodboards();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [saving, setSaving] = useState(false);
 
   if (!isRegistered) {
     return <p>Мудборды доступны только зарегистрированным — они собираются из избранного.</p>;
@@ -33,6 +34,15 @@ export function MoodboardScreen() {
 
   const selectedPlaces = favoritePlaces.filter((p) => selectedIds.has(p.id));
 
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await saveMoodboard(Array.from(selectedIds));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div>
       <h2>Мудборд</h2>
@@ -48,11 +58,7 @@ export function MoodboardScreen() {
         ))}
       </ul>
       {selectedPlaces.length > 0 && <MoodboardCollage places={selectedPlaces} />}
-      <Button
-        type="button"
-        disabled={selectedPlaces.length === 0}
-        onClick={() => saveMoodboard(Array.from(selectedIds))}
-      >
+      <Button type="button" disabled={selectedPlaces.length === 0 || saving} onClick={handleSave}>
         Сохранить мудборд
       </Button>
       <h3>Сохранённые мудборды</h3>

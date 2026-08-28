@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { supabase, ensureSession } from '../../lib/supabaseClient';
+import { translateAuthError } from '../../lib/authErrors';
 
 export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState('');
@@ -24,7 +25,7 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
     }
     const { error: signUpError } = await supabase.auth.updateUser({ email, password });
     if (signUpError) {
-      setError(signUpError.message);
+      setError(translateAuthError(signUpError.message));
       return;
     }
     // `updateUser` flips the in-memory user object's `is_anonymous` to false

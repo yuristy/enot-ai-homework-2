@@ -70,7 +70,12 @@ export function RequestForm({ onCreated }: { onCreated: () => void }) {
       </label>
       <label>
         Комментарий (укажите контакт, если хотите, чтобы с вами связались)
-        <textarea value={comment} onChange={(e) => setComment(e.target.value)} required />
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          required
+          maxLength={2000}
+        />
       </label>
       {message && <p role="status">{message}</p>}
       <Button type="submit" disabled={submitting}>
