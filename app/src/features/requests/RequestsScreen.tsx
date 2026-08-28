@@ -7,11 +7,11 @@ export function RequestsScreen() {
   const { requests, loading, error, refetch } = useRequests();
 
   if (loading) return <p>Загрузка заявок…</p>;
-  if (error) return <p>Не удалось загрузить заявки: {error}</p>;
 
   return (
     <div>
       <h2>Заявки на фотосъёмку</h2>
+      {error && <p role="status">Не удалось загрузить ленту заявок.</p>}
       <RequestForm onCreated={refetch} />
       {requests.length === 0 ? (
         <p>Заявок пока нет.</p>
