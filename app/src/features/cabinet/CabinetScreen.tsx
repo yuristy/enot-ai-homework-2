@@ -8,9 +8,13 @@ import { useAuth } from './useAuth';
 import { useFavorites } from './useFavorites';
 
 export function CabinetScreen() {
-  const { isAnonymous, profile, refreshProfile } = useAuth();
+  const { isAnonymous, profile, initializing, refreshProfile } = useAuth();
   const { favorites, loading: favoritesLoading } = useFavorites();
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signUp');
+
+  if (initializing) {
+    return <p>Загрузка…</p>;
+  }
 
   if (isAnonymous) {
     return (
