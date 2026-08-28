@@ -1,30 +1,12 @@
 // app/src/features/moodboard/useMoodboards.ts
 import { useCallback, useEffect, useState } from 'react';
 import { supabase, isAnonymousSession } from '../../lib/supabaseClient';
+import { rowToMoodboard, rowToPlace, type MoodboardRow, type PlaceRow } from '../../lib/mappers';
 import type { Moodboard, Place } from '../../lib/types';
 
 interface FavoriteWithPlaceRow {
   place_id: number;
-  places: {
-    id: number;
-    name: string;
-    description: string | null;
-    lat: number;
-    lng: number;
-    tags: string[];
-    photo_url: string | null;
-    source: 'curated' | 'user';
-    created_by: string | null;
-    created_at: string;
-  };
-}
-
-interface MoodboardRow {
-  id: number;
-  user_id: string;
-  title: string | null;
-  place_ids: number[];
-  created_at: string;
+  places: PlaceRow;
 }
 
 export function useMoodboards() {
@@ -55,20 +37,7 @@ export function useMoodboards() {
       return;
     }
     const rows = (favoriteRows ?? []) as unknown as FavoriteWithPlaceRow[];
-    setFavoritePlaces(
-      rows.map((row) => ({
-        id: row.places.id,
-        name: row.places.name,
-        description: row.places.description,
-        lat: row.places.lat,
-        lng: row.places.lng,
-        tags: row.places.tags,
-        photoUrl: row.places.photo_url,
-        source: row.places.source,
-        createdBy: row.places.created_by,
-        createdAt: row.places.created_at,
-      })),
-    );
+    setFavoritePlaces(rows.map((row) => rowToPlace(row.places)));
 
     const { data: moodboardRows, error: moodboardsError } = await supabase
       .from('moodboards')
@@ -79,15 +48,7 @@ export function useMoodboards() {
       setError('Не удалось загрузить мудборды.');
       return;
     }
-    setMoodboards(
-      ((moodboardRows ?? []) as MoodboardRow[]).map((row) => ({
-        id: row.id,
-        userId: row.user_id,
-        title: row.title,
-        placeIds: row.place_ids,
-        createdAt: row.created_at,
-      })),
-    );
+    setMoodboards(((moodboardRows ?? []) as MoodboardRow[]).map(rowToMoodboard));
   }, []);
 
   useEffect(() => {

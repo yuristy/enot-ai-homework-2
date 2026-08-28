@@ -2,29 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase, isAnonymousSession, ensureSession } from '../../lib/supabaseClient';
 import { getLimitErrorMessage } from '../../lib/limits';
+import { rowToRequest, type RequestRow } from '../../lib/mappers';
 import type { PhotoRequest, RequestType } from '../../lib/types';
-
-interface RequestRow {
-  id: number;
-  request_type: RequestType;
-  place_id: number | null;
-  wanted_date: string | null;
-  comment: string | null;
-  author_id: string;
-  created_at: string;
-}
-
-function toRequest(row: RequestRow): PhotoRequest {
-  return {
-    id: row.id,
-    requestType: row.request_type,
-    placeId: row.place_id,
-    wantedDate: row.wanted_date,
-    comment: row.comment,
-    authorId: row.author_id,
-    createdAt: row.created_at,
-  };
-}
 
 export function useRequests() {
   const [requests, setRequests] = useState<PhotoRequest[]>([]);
@@ -49,7 +28,7 @@ export function useRequests() {
     if (fetchError) {
       setError(fetchError.message);
     } else {
-      setRequests((data as RequestRow[]).map(toRequest));
+      setRequests((data as RequestRow[]).map(rowToRequest));
       setError(null);
     }
     setLoading(false);
