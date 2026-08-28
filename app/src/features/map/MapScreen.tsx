@@ -80,6 +80,8 @@ export function MapScreen() {
           totalDistanceKm={built.totalDistanceKm}
           minutes={estimate.minutes}
           difficulty={estimate.difficulty}
+          startLat={state.start!.lat}
+          startLng={state.start!.lng}
         />
       )}
       <AddPlaceForm existingPlaces={places} onSubmitted={refetch} />

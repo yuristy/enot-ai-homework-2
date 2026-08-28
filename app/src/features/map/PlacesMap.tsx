@@ -1,4 +1,5 @@
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMapEvents } from 'react-leaflet';
+import { FavoriteButton } from '../cabinet/FavoriteButton';
 import type { Place } from '../../lib/types';
 import type { StartPoint } from './useRouteState';
 
@@ -92,6 +93,7 @@ export function PlacesMap({
                 Сделать стартом
               </button>
             </div>
+            <FavoriteButton placeId={place.id} />
           </Popup>
         </Marker>
       ))}

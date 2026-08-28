@@ -1,5 +1,6 @@
 // app/src/features/map/RouteSummary.tsx
 import { Card } from '../../components/Card';
+import { SaveRouteButton } from '../cabinet/SaveRouteButton';
 import type { Place } from '../../lib/types';
 import type { RouteDifficulty } from '../../lib/route';
 
@@ -14,9 +15,18 @@ interface RouteSummaryProps {
   totalDistanceKm: number;
   minutes: number;
   difficulty: RouteDifficulty;
+  startLat: number;
+  startLng: number;
 }
 
-export function RouteSummary({ orderedPlaces, totalDistanceKm, minutes, difficulty }: RouteSummaryProps) {
+export function RouteSummary({
+  orderedPlaces,
+  totalDistanceKm,
+  minutes,
+  difficulty,
+  startLat,
+  startLng,
+}: RouteSummaryProps) {
   return (
     <Card className="route-summary">
       <p>
@@ -28,6 +38,7 @@ export function RouteSummary({ orderedPlaces, totalDistanceKm, minutes, difficul
           <li key={place.id}>{place.name}</li>
         ))}
       </ol>
+      <SaveRouteButton startLat={startLat} startLng={startLng} placeIds={orderedPlaces.map((p) => p.id)} />
     </Card>
   );
 }
