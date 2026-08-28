@@ -8,7 +8,7 @@ import { useRouteState } from './useRouteState';
 import { usePlaces } from './usePlaces';
 
 export function MapScreen() {
-  const { places, loading, error } = usePlaces();
+  const { places, loading, error, refetch } = usePlaces();
   const { state, toggleSelected, setStart, clearStart, selectedPlaces, built, estimate, shareUrl } =
     useRouteState(places);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -62,7 +62,9 @@ export function MapScreen() {
         selectedIds={new Set(state.selectedIds)}
         onToggleSelect={toggleSelected}
         onMapClickSetStart={setStart}
+        onSetStartFromPlace={(place) => setStart({ lat: place.lat, lng: place.lng })}
         routePolyline={polyline}
+        startPoint={state.start ?? undefined}
       />
       <RouteTray
         selectedCount={state.selectedIds.length}
@@ -72,7 +74,7 @@ export function MapScreen() {
         onCopyLink={handleCopyLink}
       />
       {copyFeedback && <p role="status">{copyFeedback}</p>}
-      {built && estimate && (
+      {built && estimate && selectedPlaces.length > 0 && (
         <RouteSummary
           orderedPlaces={built.orderedIds.map((id) => selectedPlaces.find((p) => p.id === id)!)}
           totalDistanceKm={built.totalDistanceKm}
@@ -80,7 +82,7 @@ export function MapScreen() {
           difficulty={estimate.difficulty}
         />
       )}
-      <AddPlaceForm existingPlaces={places} onSubmitted={() => window.location.reload()} />
+      <AddPlaceForm existingPlaces={places} onSubmitted={refetch} />
     </div>
   );
 }

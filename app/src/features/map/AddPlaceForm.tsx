@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { findNearbyDuplicates } from '../../lib/places';
 import { getLimitErrorMessage } from '../../lib/limits';
-import { supabase, isAnonymousSession } from '../../lib/supabaseClient';
+import { supabase, isAnonymousSession, ensureSession } from '../../lib/supabaseClient';
 import type { Place } from '../../lib/types';
 
 export function AddPlaceForm({
@@ -24,9 +24,22 @@ export function AddPlaceForm({
     event.preventDefault();
     setMessage(null);
 
-    const latNum = Number(lat);
-    const lngNum = Number(lng);
-    if (Number.isNaN(latNum) || Number.isNaN(lngNum) || !name.trim()) {
+    const trimmedName = name.trim();
+    const trimmedLat = lat.trim();
+    const trimmedLng = lng.trim();
+    const latNum = Number(trimmedLat);
+    const lngNum = Number(trimmedLng);
+    if (
+      !trimmedName ||
+      !trimmedLat ||
+      !trimmedLng ||
+      !Number.isFinite(latNum) ||
+      !Number.isFinite(lngNum) ||
+      latNum < -90 ||
+      latNum > 90 ||
+      lngNum < -180 ||
+      lngNum > 180
+    ) {
       setMessage('Заполните название и корректные координаты.');
       return;
     }
@@ -39,15 +52,21 @@ export function AddPlaceForm({
       return;
     }
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
+    let session;
+    try {
+      session = await ensureSession();
+    } catch {
+      setMessage('Не удалось установить сессию. Обновите страницу и попробуйте снова.');
+      return;
+    }
+
     const { error } = await supabase.from('places').insert({
-      name,
+      name: trimmedName,
       description,
       lat: latNum,
       lng: lngNum,
       source: 'user',
-      created_by: session?.user.id,
+      created_by: session.user.id,
     });
 
     if (error) {
@@ -73,11 +92,23 @@ export function AddPlaceForm({
       </label>
       <label>
         Широта
-        <input value={lat} onChange={(e) => setLat(e.target.value)} />
+        <input
+          value={lat}
+          onChange={(e) => {
+            setLat(e.target.value);
+            setDuplicateWarning(null);
+          }}
+        />
       </label>
       <label>
         Долгота
-        <input value={lng} onChange={(e) => setLng(e.target.value)} />
+        <input
+          value={lng}
+          onChange={(e) => {
+            setLng(e.target.value);
+            setDuplicateWarning(null);
+          }}
+        />
       </label>
       <label>
         Описание
