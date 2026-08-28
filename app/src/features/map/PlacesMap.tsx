@@ -49,6 +49,9 @@ interface PlacesMapProps {
   onSetStartFromPlace: (place: Place) => void;
   routePolyline?: [number, number][];
   startPoint?: StartPoint;
+  clickPopupPoint: StartPoint | null;
+  onAddPlaceHere: (point: StartPoint) => void;
+  onDismissClickPopup: () => void;
 }
 
 export function PlacesMap({
@@ -59,6 +62,9 @@ export function PlacesMap({
   onSetStartFromPlace,
   routePolyline,
   startPoint,
+  clickPopupPoint,
+  onAddPlaceHere,
+  onDismissClickPopup,
 }: PlacesMapProps) {
   return (
     <MapContainer center={MOSCOW_CENTER} zoom={11} style={{ height: '500px', width: '100%' }}>
@@ -77,6 +83,17 @@ export function PlacesMap({
           radius={10}
           pathOptions={{ color: '#2b7de9', fillColor: '#2b7de9', fillOpacity: 0.9 }}
         />
+      )}
+      {clickPopupPoint && (
+        <Popup
+          position={[clickPopupPoint.lat, clickPopupPoint.lng]}
+          eventHandlers={{ remove: onDismissClickPopup }}
+        >
+          <div>Старт маршрута перенесён сюда.</div>
+          <button type="button" onClick={() => onAddPlaceHere(clickPopupPoint)}>
+            📍 Добавить место здесь
+          </button>
+        </Popup>
       )}
       {places.map((place) => (
         <Marker key={place.id} position={[place.lat, place.lng]} keyboard>

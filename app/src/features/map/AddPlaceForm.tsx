@@ -11,17 +11,14 @@ export function AddPlaceForm({
   existingPlaces,
   onSubmitted,
   pickedLocation,
-  picking,
-  onStartPicking,
 }: {
   existingPlaces: Place[];
   onSubmitted: () => void;
   // Typing exact decimal coordinates by hand is unrealistic for most users —
-  // clicking the map is the primary path; the fields below stay editable as
-  // a fallback for anyone who does have exact coordinates to paste in.
+  // clicking the map and choosing "Добавить место здесь" in the popup is the
+  // primary path; the fields below stay editable as a fallback for anyone
+  // who does have exact coordinates to paste in.
   pickedLocation: StartPoint | null;
-  picking: boolean;
-  onStartPicking: () => void;
 }) {
   const [name, setName] = useState('');
   const [lat, setLat] = useState('');
@@ -108,9 +105,9 @@ export function AddPlaceForm({
         <input value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="coords-picker">
-        <Button type="button" variant="secondary" onClick={onStartPicking} disabled={picking}>
-          {picking ? 'Кликните по карте…' : '📍 Указать точку на карте'}
-        </Button>
+        <p className="coords-picker__hint">
+          Кликните точку на карте выше и выберите «Добавить место здесь» — либо впишите координаты вручную:
+        </p>
         <div className="coords-picker__fields">
           <label>
             Широта

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { PlacesMap } from './PlacesMap';
 import { RouteTray } from './RouteTray';
 import { RouteSummary } from './RouteSummary';
@@ -13,20 +13,26 @@ export function MapScreen() {
     useRouteState(places);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<Set<string>>(new Set());
-  // Clicking the map normally sets the route's start point. While the
-  // add-place form is "picking" a location, the same click instead fills
-  // its coordinate fields — typing raw lat/lng by hand is the exact pain
-  // point this exists to avoid.
-  const [pickingPlaceLocation, setPickingPlaceLocation] = useState(false);
   const [pickedPlaceLocation, setPickedPlaceLocation] = useState<StartPoint | null>(null);
+  // Clicking the map sets the route's start point (unchanged) and also
+  // opens a small popup at that same point offering to add a new place
+  // there — the click itself is the entry point, no separate "start
+  // picking" toggle needed.
+  const [clickPopupPoint, setClickPopupPoint] = useState<StartPoint | null>(null);
+  const addPlaceRef = useRef<HTMLDivElement>(null);
 
   function handleMapClick(point: StartPoint) {
-    if (pickingPlaceLocation) {
-      setPickedPlaceLocation(point);
-      setPickingPlaceLocation(false);
-    } else {
-      setStart(point);
-    }
+    setStart(point);
+    setClickPopupPoint(point);
+  }
+
+  function handleAddPlaceHere(point: StartPoint) {
+    setPickedPlaceLocation(point);
+    setClickPopupPoint(null);
+    requestAnimationFrame(() => {
+      addPlaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      addPlaceRef.current?.querySelector('input')?.focus();
+    });
   }
 
   const allTags = Array.from(new Set(places.flatMap((p) => p.tags))).sort();
@@ -72,10 +78,7 @@ export function MapScreen() {
   return (
     <div>
       <TagFilter allTags={allTags} activeTags={activeTags} onToggle={toggleTag} />
-      {pickingPlaceLocation && (
-        <p role="status">Кликните по карте, чтобы задать координаты нового места.</p>
-      )}
-      <div className={`map-frame viewfinder${pickingPlaceLocation ? ' map-frame--picking' : ''}`}>
+      <div className="map-frame viewfinder">
         <PlacesMap
           places={visiblePlaces}
           selectedIds={new Set(state.selectedIds)}
@@ -84,6 +87,9 @@ export function MapScreen() {
           onSetStartFromPlace={(place) => setStart({ lat: place.lat, lng: place.lng })}
           routePolyline={polyline}
           startPoint={state.start ?? undefined}
+          clickPopupPoint={clickPopupPoint}
+          onAddPlaceHere={handleAddPlaceHere}
+          onDismissClickPopup={() => setClickPopupPoint(null)}
         />
       </div>
       <RouteTray
@@ -104,13 +110,9 @@ export function MapScreen() {
           startLng={state.start!.lng}
         />
       )}
-      <AddPlaceForm
-        existingPlaces={places}
-        onSubmitted={refetch}
-        pickedLocation={pickedPlaceLocation}
-        picking={pickingPlaceLocation}
-        onStartPicking={() => setPickingPlaceLocation(true)}
-      />
+      <div ref={addPlaceRef}>
+        <AddPlaceForm existingPlaces={places} onSubmitted={refetch} pickedLocation={pickedPlaceLocation} />
+      </div>
     </div>
   );
 }

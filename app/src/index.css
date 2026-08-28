@@ -474,14 +474,15 @@ legend {
   border-radius: var(--radius);
 }
 
-.map-frame--picking .leaflet-container {
-  cursor: crosshair;
-}
-
 .coords-picker {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.coords-picker__hint {
+  color: var(--ink-dim);
+  font-size: 13px;
 }
 
 .coords-picker__fields {
