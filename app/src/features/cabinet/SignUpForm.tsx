@@ -1,7 +1,7 @@
 // app/src/features/cabinet/SignUpForm.tsx
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase, ensureSession } from '../../lib/supabaseClient';
 
 export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState('');
@@ -11,6 +11,17 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    // main.tsx kicks off the anonymous sign-in as fire-and-forget on app boot;
+    // a fast submit (a real user on a slow connection, or Playwright) can
+    // otherwise call updateUser() before any session exists at all, failing
+    // with "Auth session missing!". ensureSession() is memoized, so this is a
+    // no-op once the boot-time sign-in has already landed.
+    try {
+      await ensureSession();
+    } catch (sessionError) {
+      setError(sessionError instanceof Error ? sessionError.message : 'Не удалось создать сессию.');
+      return;
+    }
     const { error: signUpError } = await supabase.auth.updateUser({ email, password });
     if (signUpError) {
       setError(signUpError.message);
