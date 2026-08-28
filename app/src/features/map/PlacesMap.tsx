@@ -81,6 +81,9 @@ export function PlacesMap({
       {places.map((place) => (
         <Marker key={place.id} position={[place.lat, place.lng]} keyboard>
           <Popup>
+            {place.photoUrl && (
+              <img className="place-popup-photo" src={place.photoUrl} alt={place.name} loading="lazy" />
+            )}
             <strong>{place.name}</strong>
             {place.source === 'user' && <div>от пользователя</div>}
             <div>
